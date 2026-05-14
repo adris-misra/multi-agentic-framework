@@ -1,9 +1,9 @@
 # src/agents/deployment_agent.py
 
-from autogen import ConversableAgent
 import openai
+from src.agents.base_agent import BaseAgent
 
-class DeploymentAgent(ConversableAgent):
+class DeploymentAgent(BaseAgent):
     """
     Agent that generates a simple deployment script for a Python application.
     Includes setting up a virtual environment, installing dependencies, and running the app.
@@ -36,7 +36,8 @@ class DeploymentAgent(ConversableAgent):
         """
         Calls the OpenAI API to generate the deployment script.
         """
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a DevOps deployment assistant."},
@@ -44,4 +45,4 @@ class DeploymentAgent(ConversableAgent):
             ],
             temperature=0.2
         )
-        return response.choices[0].message["content"].strip()
+        return response.choices[0].message.content.strip()

@@ -1,9 +1,9 @@
 # src/agents/code_review_agent.py
 
-from autogen import ConversableAgent
 import openai
+from src.agents.base_agent import BaseAgent
 
-class CodeReviewAgent(ConversableAgent):
+class CodeReviewAgent(BaseAgent):
     """
     Agent that reviews Python code for correctness, efficiency, security, and readability.
     Returns either 'Approved' or a list of feedback points.
@@ -36,7 +36,8 @@ class CodeReviewAgent(ConversableAgent):
         """
         Calls the OpenAI API to perform a code review.
         """
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a code review expert."},
@@ -44,4 +45,4 @@ class CodeReviewAgent(ConversableAgent):
             ],
             temperature=0.2
         )
-        return response.choices[0].message["content"].strip()
+        return response.choices[0].message.content.strip()

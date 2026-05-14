@@ -1,9 +1,9 @@
 # src/agents/coding_agent.py
 
-from autogen import ConversableAgent
 import openai
+from src.agents.base_agent import BaseAgent
 
-class CodingAgent(ConversableAgent):
+class CodingAgent(BaseAgent):
     """
     Agent that translates structured software requirements into Python code.
     Can also refine the code based on feedback from code reviewers.
@@ -33,7 +33,8 @@ class CodingAgent(ConversableAgent):
         """
         Calls the OpenAI API to generate code from the given prompt.
         """
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a Python coding assistant."},
@@ -41,4 +42,4 @@ class CodingAgent(ConversableAgent):
             ],
             temperature=0.3
         )
-        return response.choices[0].message["content"].strip()
+        return response.choices[0].message.content.strip()

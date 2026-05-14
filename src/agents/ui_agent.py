@@ -1,9 +1,9 @@
 # src/agents/ui_agent.py
 
-from autogen import ConversableAgent
 import openai
+from src.agents.base_agent import BaseAgent
 
-class UIAgent(ConversableAgent):
+class UIAgent(BaseAgent):
     """
     Agent that generates a basic Streamlit UI for interacting with the multi-agent system.
     The UI allows users to input natural language requirements and displays system outputs.
@@ -39,7 +39,8 @@ class UIAgent(ConversableAgent):
         """
         Calls the OpenAI API to generate the Streamlit UI script.
         """
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a Streamlit UI developer."},
@@ -47,4 +48,4 @@ class UIAgent(ConversableAgent):
             ],
             temperature=0.3
         )
-        return response.choices[0].message["content"].strip()
+        return response.choices[0].message.content.strip()

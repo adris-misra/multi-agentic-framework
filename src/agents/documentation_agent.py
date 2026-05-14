@@ -1,9 +1,9 @@
 # src/agents/documentation_agent.py
 
-from autogen import ConversableAgent
 import openai
+from src.agents.base_agent import BaseAgent
 
-class DocumentationAgent(ConversableAgent):
+class DocumentationAgent(BaseAgent):
     """
     Agent that generates structured documentation for Python code.
     Covers descriptions, parameters, return values, and usage examples.
@@ -37,7 +37,8 @@ class DocumentationAgent(ConversableAgent):
         """
         Calls the OpenAI API to generate documentation for the code.
         """
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a technical documentation specialist."},
@@ -45,4 +46,4 @@ class DocumentationAgent(ConversableAgent):
             ],
             temperature=0.2
         )
-        return response.choices[0].message["content"].strip()
+        return response.choices[0].message.content.strip()

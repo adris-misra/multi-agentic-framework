@@ -1,9 +1,9 @@
 # src/agents/requirement_agent.py
 
-from autogen import ConversableAgent
 import openai
+from src.agents.base_agent import BaseAgent
 
-class RequirementAgent(ConversableAgent):
+class RequirementAgent(BaseAgent):
     """
     Agent that converts raw natural language input into a structured software requirement.
     Expected output is a dictionary with keys: goal, features, constraints, inputs, outputs.
@@ -53,7 +53,8 @@ class RequirementAgent(ConversableAgent):
         """
         Calls the OpenAI API to complete the given prompt using GPT-4.
         """
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a requirements analyst."},
@@ -61,4 +62,4 @@ class RequirementAgent(ConversableAgent):
             ],
             temperature=0.2
         )
-        return response.choices[0].message["content"]
+        return response.choices[0].message.content

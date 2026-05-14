@@ -1,9 +1,9 @@
 # src/agents/test_agent.py
 
-from autogen import ConversableAgent
 import openai
+from src.agents.base_agent import BaseAgent
 
-class TestAgent(ConversableAgent):
+class TestAgent(BaseAgent):
     """
     Agent that generates test cases for Python code using the pytest framework.
     Includes both unit and integration tests where applicable.
@@ -36,7 +36,8 @@ class TestAgent(ConversableAgent):
         """
         Calls the OpenAI API to generate test code.
         """
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a software test engineer."},
@@ -44,4 +45,4 @@ class TestAgent(ConversableAgent):
             ],
             temperature=0.3
         )
-        return response.choices[0].message["content"].strip()
+        return response.choices[0].message.content.strip()

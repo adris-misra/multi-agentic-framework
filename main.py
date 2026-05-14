@@ -1,7 +1,5 @@
 # multi_agent_framework/main.py
 
-from autogen import ConversableAgent, UserProxyAgent
-
 # Agent imports: Each agent handles a specific stage of the pipeline
 from src.agents.requirement_agent import RequirementAgent  # Parses raw input into structured requirements
 from src.agents.coding_agent import CodingAgent            # Generates code from structured requirements
@@ -11,9 +9,10 @@ from src.agents.test_agent import TestAgent                # Generates test case
 from src.agents.deployment_agent import DeploymentAgent    # Prepares deployment script
 from src.agents.ui_agent import UIAgent                    # Creates a Streamlit-based UI stub
 
+MAX_REVIEW_ITERATIONS = 5
+
 def main():
     # Initialize agents
-    user_agent = UserProxyAgent(name="User")
     req_agent = RequirementAgent("RequirementAgent")
     code_agent = CodingAgent("CodingAgent")
     review_agent = CodeReviewAgent("CodeReviewAgent")
@@ -34,10 +33,10 @@ def main():
     # Step 2: Code Generation - Translate requirements into executable Python code
     code = code_agent.run(structured_req)
 
-    # Step 3: Code Review - Loop until code is approved
-    while True:
+    # Step 3: Code Review - Loop until code is approved (cap iterations to avoid infinite loop)
+    for _ in range(MAX_REVIEW_ITERATIONS):
         feedback = review_agent.run(code)
-        if feedback == "Approved":
+        if feedback.strip().lower().startswith("approved"):
             break
         code = code_agent.run(structured_req, feedback)
 
