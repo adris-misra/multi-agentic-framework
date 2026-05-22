@@ -1,0 +1,69 @@
+# CMMC Level 2 Control Mapping
+# Maps framework capabilities to CMMC L2 practices (aligned with NIST SP 800-171 Rev 2).
+# Ref: CMMC Model v2.0, NIST SP 800-171 Rev 2
+# Note: This is a reference mapping for documentation purposes.
+
+domains:
+  AC:
+    name: Access Control
+    practices:
+      AC.L2-3.1.1:
+        description: Limit system access to authorized users
+        implemented_by: [UNSContextBrokerAgent, purdue_zoning.py]
+      AC.L2-3.1.2:
+        description: Limit system access to authorized transactions
+        implemented_by: [SafetyGuardrailAgent, policy_engine.py]
+      AC.L2-3.1.3:
+        description: Control CUI flow in accordance with approved authorizations
+        implemented_by: [UNSContextBrokerAgent, pii_redactor.py]
+
+  AU:
+    name: Audit and Accountability
+    practices:
+      AU.L2-3.3.1:
+        description: Create and retain audit logs
+        implemented_by: [GovernanceLineageAgent, audit_signer.py]
+      AU.L2-3.3.2:
+        description: Ensure audit log integrity
+        implemented_by: [audit_signer.py]  # Ed25519 signing
+
+  CM:
+    name: Configuration Management
+    practices:
+      CM.L2-3.4.1:
+        description: Establish baseline configurations
+        implemented_by: [config/purdue_zones.yaml, config/cmmc_l2_controls.yaml]
+
+  IA:
+    name: Identification and Authentication
+    practices:
+      IA.L2-3.5.1:
+        description: Identify system users
+        implemented_by: [HITLSupervisorAgent]  # actor identity in HITLDecision
+      IA.L2-3.5.3:
+        description: Use multifactor authentication
+        implemented_by: [mtls.py]  # dev mTLS; production: integrate with IdP
+
+  IR:
+    name: Incident Response
+    practices:
+      IR.L2-3.6.1:
+        description: Establish incident-handling capability
+        implemented_by: [HITLSupervisorAgent, GovernanceLineageAgent]
+
+  RM:
+    name: Risk Management
+    practices:
+      RM.L2-3.11.1:
+        description: Periodically assess risk
+        implemented_by: [SafetyGuardrailAgent, AnomalyRootCauseAgent]
+
+  SI:
+    name: System and Information Integrity
+    practices:
+      SI.L2-3.14.1:
+        description: Identify and correct system flaws
+        implemented_by: [AnomalyRootCauseAgent]
+      SI.L2-3.14.6:
+        description: Monitor for malicious code at entry/exit points
+        implemented_by: [policies/prompt_injection.rego]

@@ -1,0 +1,76 @@
+site_name: Industrial Agentic Intelligence Framework
+site_description: >
+  UNS-native, cybersecurity-aware multi-agent reference architecture for U.S. manufacturing.
+site_url: https://adris-misra.github.io/multi-agentic-framework/
+repo_url: https://github.com/adris-misra/multi-agentic-framework
+repo_name: adris-misra/multi-agentic-framework
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - UNS Context Broker: architecture/uns_context_broker.md
+  - Standards:
+      - Alignment Matrix: standards/standards_alignment.md
+      - ISO 15926 Subset: standards/iso15926_subset.md
+  - Governance:
+      - AI RMF Profile: governance/ai_rmf_profile.md
+      - CMMC L2 Mapping: governance/cmmc_l2_mapping.md
+  - Case Studies:
+      - SMM Starter: case_studies/smm_starter.md
+      - CHIPS Supplier: case_studies/chips_supplier.md

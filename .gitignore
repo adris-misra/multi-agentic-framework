@@ -1,0 +1,129 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+.installed.cfg
+lib/
+lib64/
+MANIFEST
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env.bak
+
+# Distribution / packaging
+.eggs/
+*.egg-info/
+
+# Unit test / coverage
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# pyenv
+.python-version
+
+# Secrets — NEVER commit these
+.env
+.secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+sbom.json
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Docker volumes (local dev)
+docker/volumes/
+
+# Data — large files stay out of git; use DVC or direct download
+data/synthetic/parquet/
+data/synthetic/mqtt_replay/
+# Keep SOP and expert-notes markdown (small text)
+!data/synthetic/sops/
+!data/synthetic/expert_notes/
+!data/synthetic/labels.json
+
+# MkDocs build output
+site/
+
+# Pre-commit
+.pre-commit-cache/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject.db
+.spyproject/
+
+# Rope
+.ropeproject/
+
+# pytest-cov
+.coverage
+htmlcov/

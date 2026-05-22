@@ -1,0 +1,41 @@
+# ISA-95 Enterprise-Control Model
+# Defines the hierarchy used for UNS path resolution and context enrichment.
+# Ref: ANSI/ISA-95 Part 1 (IEC 62264-1)
+
+hierarchy:
+  - level: 4
+    name: enterprise
+    description: Top-level corporate entity
+  - level: 3
+    name: site
+    description: Physical plant or facility
+  - level: 2
+    name: area
+    description: Functional grouping within a site (e.g., injection molding, assembly)
+  - level: 1
+    name: line
+    description: Production line within an area
+  - level: 0
+    name: cell
+    description: Work cell or machine group
+  - level: -1
+    name: asset
+    description: Individual machine or device
+  - level: -2
+    name: signal
+    description: Individual data point on an asset
+
+# ISO 14224 equipment taxonomy classes used for asset metadata decoration
+iso14224_classes:
+  - class: rotating_equipment
+    examples: [pump, compressor, fan, motor]
+  - class: static_equipment
+    examples: [vessel, heat_exchanger, filter]
+  - class: electrical
+    examples: [transformer, switchgear, ups]
+  - class: instrumentation
+    examples: [transmitter, analyzer, flow_meter]
+  - class: process_equipment
+    examples: [injection_mold, cnc_machine, press, conveyor]
+  - class: utility
+    examples: [hvac, compressed_air, chiller]

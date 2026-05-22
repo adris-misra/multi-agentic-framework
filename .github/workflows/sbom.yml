@@ -1,0 +1,25 @@
+name: SBOM
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  generate-sbom:
+    name: Generate CycloneDX SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install cyclonedx-bom
+        run: pip install cyclonedx-bom
+      - name: Install project dependencies
+        run: pip install -e .
+      - name: Generate SBOM
+        run: cyclonedx-py environment --output-format json --output-file sbom.json
+      - name: Upload SBOM to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sbom.json
