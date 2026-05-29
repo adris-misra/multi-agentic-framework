@@ -1,0 +1,49 @@
+name: Feature Request
+description: Propose a new capability or improvement
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting, please check the [open issues](../../issues) and the build spec to confirm
+        this isn't already planned. Out-of-scope items (§13 of the spec) will be closed with a note.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What manufacturing / OT problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature. Include agent/tool/config file names if applicable.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: standards
+    attributes:
+      label: Standards alignment
+      multiple: true
+      options:
+        - ISA-95
+        - MQTT Sparkplug B
+        - OPC UA
+        - NIST SP 800-82
+        - CMMC L2
+        - NIST AI RMF
+        - ISO 42001
+        - None / unsure
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

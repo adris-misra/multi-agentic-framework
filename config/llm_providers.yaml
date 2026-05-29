@@ -1,0 +1,53 @@
+# LLM Provider Configuration
+# Selected via LLM_PROVIDER env var or the `default` key here.
+# All providers implement the LLMProvider protocol in src/industrial_agents/agents/_llm.py
+
+default: anthropic
+
+providers:
+  anthropic:
+    module: industrial_agents.agents._llm_providers.anthropic
+    class: AnthropicProvider
+    model: claude-sonnet-4-6
+    max_tokens: 4096
+    temperature: 0.2
+    env_key: ANTHROPIC_API_KEY
+
+  openai:
+    module: industrial_agents.agents._llm_providers.openai
+    class: OpenAIProvider
+    model: gpt-4o
+    max_tokens: 4096
+    temperature: 0.2
+    env_key: OPENAI_API_KEY
+
+  bedrock:
+    module: industrial_agents.agents._llm_providers.bedrock
+    class: BedrockProvider
+    model: anthropic.claude-3-5-sonnet-20241022-v2:0
+    max_tokens: 4096
+    temperature: 0.2
+    region: us-east-1
+    env_key: AWS_DEFAULT_REGION  # uses boto3 default credential chain
+
+  ollama:
+    module: industrial_agents.agents._llm_providers.ollama
+    class: OllamaProvider
+    model: llama3.1:8b
+    max_tokens: 4096
+    temperature: 0.2
+    base_url: http://localhost:11434  # override with OLLAMA_BASE_URL
+
+# Per-agent model overrides (optional)
+# If not specified, agent uses the default provider above.
+agent_overrides:
+  OperationalIntentAgent:
+    provider: anthropic
+    model: claude-sonnet-4-6
+  SafetyGuardrailAgent:
+    provider: anthropic
+    model: claude-sonnet-4-6
+    temperature: 0.0   # deterministic for safety decisions
+  AnomalyRootCauseAgent:
+    provider: anthropic
+    model: claude-sonnet-4-6

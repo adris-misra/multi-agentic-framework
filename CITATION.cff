@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software in your research or work, please cite it as below."
+type: software
+title: "Industrial Agentic Intelligence Framework"
+abstract: >
+  An open-source, UNS-native, cybersecurity-aware multi-agent reference architecture
+  for closing the operational knowledge gap in U.S. small-to-mid manufacturers.
+  Aligns to ISA-95, MQTT Sparkplug B, OPC UA, NIST SP 800-82, NIST AI RMF, and CMMC L2.
+authors:
+  - family-names: Misra
+    given-names: Adris
+    email: adris.online@gmail.com
+    orcid: ""
+repository-code: "https://github.com/adris-misra/multi-agentic-framework"
+url: "https://github.com/adris-misra/multi-agentic-framework"
+license: MIT
+version: "0.1.0"
+date-released: "2026-05-14"
+keywords:
+  - manufacturing
+  - agentic-ai
+  - unified-namespace
+  - isa-95
+  - opc-ua
+  - sparkplug-b
+  - cmmc
+  - nist-ai-rmf
+  - multi-agent-systems
+  - industrial-iot
+  - predictive-maintenance
+  - digital-manufacturing

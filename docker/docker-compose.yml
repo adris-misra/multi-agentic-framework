@@ -1,0 +1,108 @@
+version: "3.9"
+
+services:
+  # Eclipse Mosquitto MQTT broker (Sparkplug B compatible)
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: industrial-agents-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"   # WebSocket
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt_data:/mosquitto/data
+      - mqtt_log:/mosquitto/log
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "health", "-m", "ping", "-q", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ChromaDB vector store (local dev; swap for pgvector in prod)
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: industrial-agents-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_AUTH_CREDENTIALS_FILE=/dev/null
+      - ALLOW_RESET=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Jaeger all-in-one for OpenTelemetry traces
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: industrial-agents-jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+
+  # Prometheus metrics
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: industrial-agents-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  # UNS simulator — replays synthetic MQTT data (placeholder; fleshed out in Phase 6)
+  uns-simulator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.edge
+    container_name: industrial-agents-uns-sim
+    environment:
+      - MQTT_BROKER=mqtt
+      - MQTT_PORT=1883
+      - UNS_REPLAY_SPEED=1.0
+    depends_on:
+      mqtt:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Main application (Streamlit operator copilot + API)
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.app
+    container_name: industrial-agents-app
+    ports:
+      - "8501:8501"
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - MQTT_BROKER=mqtt
+      - MQTT_PORT=1883
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+    depends_on:
+      chroma:
+        condition: service_healthy
+      mqtt:
+        condition: service_healthy
+    volumes:
+      - ../config:/app/config:ro
+      - ../data:/app/data:ro
+    restart: unless-stopped
+
+volumes:
+  mqtt_data:
+  mqtt_log:
+  chroma_data:
+  prometheus_data:

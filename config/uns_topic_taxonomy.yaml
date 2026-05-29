@@ -1,0 +1,66 @@
+# Unified Namespace (UNS) Topic Taxonomy
+# Topic pattern: <enterprise>/<site>/<area>/<line>/<cell>/<asset>/<signal>
+# Follows MQTT Sparkplug B naming conventions.
+# Ref: Eclipse Sparkplug B Specification v3.0
+
+namespace_root: "spBv1.0"
+
+# Canonical enterprise
+enterprise: "acme-manufacturing"
+
+sites:
+  - id: chicago-plant
+    description: Chicago injection molding facility
+    areas:
+      - id: molding
+        description: Injection molding production
+        lines:
+          - id: line-01
+            cells: [cell-A, cell-B, cell-C, cell-D]
+          - id: line-02
+            cells: [cell-A, cell-B, cell-C, cell-D]
+          - id: line-03
+            cells: [cell-A, cell-B, cell-C, cell-D]
+      - id: assembly
+        description: Final assembly and quality
+      - id: utilities
+        description: Compressed air, HVAC, power
+
+# Signal taxonomy per asset class
+signal_groups:
+  motor:
+    - current_a         # Motor current phase A (A)
+    - current_b         # Motor current phase B (A)
+    - current_c         # Motor current phase C (A)
+    - speed_rpm         # Shaft speed (RPM)
+    - torque_nm         # Torque (Nm)
+    - temp_bearing_de   # Drive-end bearing temperature (°C)
+    - temp_bearing_nde  # Non-drive-end bearing temperature (°C)
+    - vibration_x       # Vibration X-axis (mm/s RMS)
+    - vibration_y       # Vibration Y-axis (mm/s RMS)
+    - vibration_z       # Vibration Z-axis (mm/s RMS)
+    - energy_kwh        # Cumulative energy (kWh)
+  injection_mold:
+    - cycle_time_s      # Cycle time (s)
+    - inject_pressure   # Injection pressure (bar)
+    - clamp_force_kn    # Clamp force (kN)
+    - melt_temp_c       # Melt temperature (°C)
+    - mold_temp_c       # Mold temperature (°C)
+    - scrap_count       # Scrap parts count
+    - shot_weight_g     # Shot weight (g)
+    - hydraulic_pressure # Hydraulic pressure (bar)
+  hydraulic:
+    - pressure_bar      # System pressure (bar)
+    - temp_oil_c        # Oil temperature (°C)
+    - flow_lpm          # Flow rate (L/min)
+    - level_pct         # Reservoir level (%)
+
+# Reserved topic prefixes
+reserved_prefixes:
+  - spBv1.0/STATE      # Sparkplug primary application state
+  - spBv1.0/NBIRTH     # Node birth
+  - spBv1.0/NDEATH     # Node death
+  - spBv1.0/DBIRTH     # Device birth
+  - spBv1.0/DDEATH     # Device death
+  - spBv1.0/NDATA      # Node data
+  - spBv1.0/DDATA      # Device data

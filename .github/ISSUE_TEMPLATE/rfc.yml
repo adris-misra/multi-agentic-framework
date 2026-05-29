@@ -1,0 +1,59 @@
+name: RFC (Request for Comments)
+description: Propose a significant architectural or design change
+labels: ["rfc", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        RFCs are for changes that affect multiple agents, the orchestration layer,
+        governance model, or public interfaces. Small bug fixes do not need an RFC.
+
+  - type: input
+    id: title
+    attributes:
+      label: RFC title
+      placeholder: "RFC-NNN: Short descriptive title"
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this change needed? What problem does it solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Proposed design
+      description: |
+        Describe the proposed change in detail. Include:
+        - New / modified interfaces
+        - Which agents or tools are affected
+        - Data flow changes
+        - Security and Purdue-zone implications
+    validations:
+      required: true
+
+  - type: textarea
+    id: drawbacks
+    attributes:
+      label: Drawbacks and risks
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: textarea
+    id: unresolved
+    attributes:
+      label: Unresolved questions
+    validations:
+      required: false
