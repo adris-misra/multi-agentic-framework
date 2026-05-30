@@ -29,8 +29,6 @@ def run(
     """Run the 10-agent pipeline on a single operator query."""
     import structlog.contextvars
 
-    import structlog.contextvars
-
     structlog.contextvars.clear_contextvars()
     trace_id = str(uuid.uuid4())
     structlog.contextvars.bind_contextvars(trace_id=trace_id)
@@ -70,10 +68,30 @@ def bench(
 def seed_synthetic(
     seed: int = typer.Option(42, "--seed", help="Random seed for reproducibility."),
     out: str = typer.Option("data/synthetic/", "--out", help="Output directory."),
+    hours: int = typer.Option(24, "--hours", help="Hours of telemetry to generate."),
+    fmt: str = typer.Option("jsonl", "--format", help="Output format: jsonl or parquet."),
 ) -> None:
     """Generate the synthetic UNS dataset used for benchmarks and examples."""
-    typer.echo("⚙  seed-synthetic subcommand — implemented in Phase 6.")
-    raise typer.Exit(code=1)
+    from pathlib import Path
+
+    from industrial_agents.synthetic.uns_generator import UNSDataGenerator
+
+    typer.echo(f"Generating {hours}h synthetic UNS dataset (seed={seed})...")
+    gen = UNSDataGenerator(seed=seed)
+    data = gen.generate(n_hours=hours)
+    out_path = Path(out)
+
+    if fmt == "parquet":
+        gen.save_parquet(data, out_path / "telemetry.parquet")
+    else:
+        gen.save_jsonl(data, out_path / "telemetry.jsonl")
+
+    meta = data["metadata"]
+    typer.echo(
+        f"Done: {meta['n_rows']:,} rows, {meta['n_assets']} assets, "
+        f"{len(meta['anomalies'])} injected anomalies → {out}"
+    )
+    raise typer.Exit(code=0)
 
 
 @app.command(name="governance-export")
