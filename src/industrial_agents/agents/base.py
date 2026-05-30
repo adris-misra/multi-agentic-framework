@@ -5,13 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
 
-class AgentRole(str, Enum):
+class AgentRole(StrEnum):
     OPERATIONAL_INTENT = "operational_intent"
     UNS_CONTEXT_BROKER = "uns_context_broker"
     TELEMETRY_HISTORIAN = "telemetry_historian"

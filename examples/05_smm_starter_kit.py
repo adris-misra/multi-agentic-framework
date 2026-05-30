@@ -35,7 +35,7 @@ from industrial_agents.orchestration.routing_policy import RoutingPolicy
 _MOCK_MODE = "--mock" in sys.argv or "pytest" in sys.modules
 
 
-def _make_mock_llm(role_hint: str = "operator") -> AsyncMock:
+def _make_mock_llm() -> AsyncMock:
     llm = AsyncMock()
 
     responses = {
@@ -85,10 +85,7 @@ async def main() -> None:
     print(f"\n[1] Routing → {target.value}")
 
     # 2. Set up LLM provider
-    if _MOCK_MODE:
-        llm = _make_mock_llm()
-    else:
-        llm = get_llm_provider("ollama")
+    llm = _make_mock_llm() if _MOCK_MODE else get_llm_provider("ollama")
 
     governance = LineageBus()
     mock_broker = AsyncMock()
@@ -120,7 +117,7 @@ async def main() -> None:
     result = await copilot.handle(copilot_msg)
     response = result.payload.get("response", {})
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"URGENCY:  {response.get('urgency', 'unknown').upper()}")
     print(f"SUMMARY:  {response.get('summary', '')}")
     print()
@@ -129,7 +126,7 @@ async def main() -> None:
         for item in response["action_items"]:
             print(f"  {item}")
     print(f"\nNEXT STEP: {response.get('next_step', '')}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"\n[Safe to proceed: {response.get('safe_to_proceed', '?')}]")
     print()
 

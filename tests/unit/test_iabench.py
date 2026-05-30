@@ -3,11 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
-from pathlib import Path
-from unittest.mock import AsyncMock
-
-import pytest
 
 from benchmarks.iabench import BenchmarkResult, BenchmarkSuite, _make_anomaly_dataset
 

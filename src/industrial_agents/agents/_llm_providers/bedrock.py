@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from typing import Any
 
@@ -39,9 +38,7 @@ class BedrockProvider:
             if m.get("role") != "system"
         ]
 
-        system_prompt = next(
-            (m["content"] for m in messages if m.get("role") == "system"), None
-        )
+        system_prompt = next((m["content"] for m in messages if m.get("role") == "system"), None)
 
         kwargs: dict[str, Any] = {
             "modelId": model_id,
@@ -69,9 +66,7 @@ class BedrockProvider:
         import asyncio
 
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None, lambda: self._client.converse(**kwargs)
-        )
+        response = await loop.run_in_executor(None, lambda: self._client.converse(**kwargs))
 
         output = response.get("output", {}).get("message", {})
         content_blocks: list[dict[str, Any]] = []

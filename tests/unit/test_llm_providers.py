@@ -51,10 +51,8 @@ class TestLLMProviderProtocol:
     def test_mock_llm_has_complete_method(self, mock_llm: object) -> None:
         assert callable(getattr(mock_llm, "complete", None))
 
-    @pytest.mark.asyncio()
-    async def test_mock_llm_complete_returns_expected_shape(
-        self, mock_llm: AsyncMock
-    ) -> None:
+    @pytest.mark.asyncio
+    async def test_mock_llm_complete_returns_expected_shape(self, mock_llm: AsyncMock) -> None:
         result = await mock_llm.complete([{"role": "user", "content": "hello"}])
         assert "content" in result
         assert "model" in result

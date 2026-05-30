@@ -1,4 +1,4 @@
-﻿"""Telemetry & Historian Agent â€” reads OPC UA, MQTT Sparkplug B, and historian sources."""
+"""Telemetry & Historian Agent â€” reads OPC UA, MQTT Sparkplug B, and historian sources."""
 
 from __future__ import annotations
 
@@ -80,9 +80,7 @@ class TelemetryHistorianAgent(BaseIndustrialAgent):
             {"role": "system", "content": _SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": (
-                    f"Intent: {message.intent}\nPayload: {json.dumps(message.payload)}"
-                ),
+                "content": (f"Intent: {message.intent}\nPayload: {json.dumps(message.payload)}"),
             },
         ]
 
@@ -104,7 +102,10 @@ class TelemetryHistorianAgent(BaseIndustrialAgent):
                 "tag": message.payload.get("tag", "unknown"),
                 "value": None,
                 "quality": "uncertain",
-                "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat() + "Z",
+                "timestamp_utc": datetime.datetime.now(datetime.UTC)
+                .replace(tzinfo=None)
+                .isoformat()
+                + "Z",
                 "source": "simulated",
                 "units": None,
             }
@@ -118,4 +119,3 @@ class TelemetryHistorianAgent(BaseIndustrialAgent):
             trace_id=message.trace_id,
             correlation_id=message.correlation_id,
         )
-

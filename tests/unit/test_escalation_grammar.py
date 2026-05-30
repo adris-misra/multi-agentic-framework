@@ -12,7 +12,7 @@ from industrial_agents.orchestration.escalation_grammar import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def router() -> EscalationRouter:
     return EscalationRouter(hitl_threshold=0.85)
 
@@ -88,9 +88,7 @@ class TestEscalationRouter:
         )
         assert router.evaluate(event) is True
 
-    def test_does_not_block_above_threshold(
-        self, router: EscalationRouter, trace_id: str
-    ) -> None:
+    def test_does_not_block_above_threshold(self, router: EscalationRouter, trace_id: str) -> None:
         event = EscalationEvent(
             agent="telemetry",
             level=EscalationLevel.INFO,

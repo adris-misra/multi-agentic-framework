@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -12,7 +11,7 @@ from industrial_agents.synthetic.uns_generator import UNSDataGenerator
 
 
 class TestUNSDataGenerator:
-    @pytest.fixture()
+    @pytest.fixture
     def gen(self) -> UNSDataGenerator:
         return UNSDataGenerator(seed=42)
 
@@ -86,7 +85,8 @@ class TestUNSDataGenerator:
     def test_anomaly_causes_value_spike(self, gen: UNSDataGenerator) -> None:
         data = gen.generate(n_hours=6, inject_anomalies=True)
         motor_vibration = [
-            r for r in data["rows"]
+            r
+            for r in data["rows"]
             if r["asset_id"] == "motor_01" and r["signal"] == "vibration_rms"
         ]
         values = [r["value"] for r in motor_vibration]

@@ -51,7 +51,7 @@ async def main() -> None:
             reversibility="reversible",
             trace_id=str(uuid.uuid4()),
             inputs_hash="a" * 64,
-            timestamp_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            timestamp_utc=datetime.datetime.now(datetime.UTC).isoformat(),
         ),
         AgentDecision(
             agent="safety_guardrail",
@@ -62,7 +62,7 @@ async def main() -> None:
             reversibility="reversible",
             trace_id=str(uuid.uuid4()),
             inputs_hash="b" * 64,
-            timestamp_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            timestamp_utc=datetime.datetime.now(datetime.UTC).isoformat(),
         ),
         AgentDecision(
             agent="work_order_mes",
@@ -73,7 +73,7 @@ async def main() -> None:
             reversibility="soft",
             trace_id=str(uuid.uuid4()),
             inputs_hash="c" * 64,
-            timestamp_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            timestamp_utc=datetime.datetime.now(datetime.UTC).isoformat(),
         ),
     ]
 

@@ -42,8 +42,10 @@ def redact_dict(data: dict[str, Any], depth: int = 0) -> dict[str, Any]:
             result[k] = redact_dict(v, depth + 1)
         elif isinstance(v, list):
             result[k] = [
-                redact_string(item) if isinstance(item, str)
-                else redact_dict(item, depth + 1) if isinstance(item, dict)
+                redact_string(item)
+                if isinstance(item, str)
+                else redact_dict(item, depth + 1)
+                if isinstance(item, dict)
                 else item
                 for item in v
             ]

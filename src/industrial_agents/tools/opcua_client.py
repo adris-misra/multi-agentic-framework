@@ -95,7 +95,7 @@ class OPCUAClient:
             node = self._client.get_node(node_id)
             dv = await node.read_data_value()
             quality = "good" if dv.StatusCode.is_good() else "bad"
-            ts = dv.SourceTimestamp or datetime.datetime.now(datetime.timezone.utc)
+            ts = dv.SourceTimestamp or datetime.datetime.now(datetime.UTC)
             return OPCUAReading(
                 node_id=node_id,
                 value=dv.Value.Value if dv.Value else None,
@@ -120,9 +120,9 @@ class OPCUAClient:
             "SafetyGuardrailAgent and WorkOrderMESAgent with HITL approval."
         )
 
-    async def __aenter__(self) -> "OPCUAClient":
+    async def __aenter__(self) -> OPCUAClient:
         await self.connect()
         return self
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(self, *_args: object) -> None:
         await self.disconnect()

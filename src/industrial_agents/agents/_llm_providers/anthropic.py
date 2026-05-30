@@ -16,9 +16,7 @@ class AnthropicProvider:
     def __init__(self, api_key: str | None = None) -> None:
         import anthropic
 
-        self._client = anthropic.AsyncAnthropic(
-            api_key=api_key or os.environ["ANTHROPIC_API_KEY"]
-        )
+        self._client = anthropic.AsyncAnthropic(api_key=api_key or os.environ["ANTHROPIC_API_KEY"])
 
     async def complete(
         self,

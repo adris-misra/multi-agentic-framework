@@ -76,8 +76,7 @@ def bench(
 
     summary = result_suite.summary()
     typer.echo(
-        f"Results: {summary['passed']}/{summary['total_tasks']} tasks passed. "
-        f"Saved to {out_path}"
+        f"Results: {summary['passed']}/{summary['total_tasks']} tasks passed. Saved to {out_path}"
     )
     raise typer.Exit(code=0 if result_suite.passed() else 1)
 

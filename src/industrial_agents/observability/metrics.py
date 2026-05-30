@@ -12,7 +12,7 @@ class IndustrialMetrics:
     can import this module without error.
     """
 
-    _instance: "IndustrialMetrics | None" = None
+    _instance: IndustrialMetrics | None = None
 
     def __init__(self) -> None:
         self._initialized = False
@@ -23,7 +23,7 @@ class IndustrialMetrics:
         self._anomalies_detected: Any = None
 
     @classmethod
-    def get(cls) -> "IndustrialMetrics":
+    def get(cls) -> IndustrialMetrics:
         if cls._instance is None:
             cls._instance = cls()
             cls._instance._init()

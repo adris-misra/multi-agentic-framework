@@ -1,4 +1,4 @@
-﻿"""Work-Order & MES Dispatch Agent â€” writes to CMMS/MES with dry-run diff + idempotency."""
+"""Work-Order & MES Dispatch Agent â€” writes to CMMS/MES with dry-run diff + idempotency."""
 
 from __future__ import annotations
 
@@ -169,7 +169,9 @@ class WorkOrderMESAgent(BaseIndustrialAgent):
             reversibility="irreversible",
             trace_id=message.trace_id,
             inputs_hash=inputs_hash,
-            timestamp_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat() + "Z",
+            timestamp_utc=datetime.datetime.now(datetime.UTC)
+            .replace(tzinfo=None)
+            .isoformat()
+            + "Z",
         )
         return decision
-

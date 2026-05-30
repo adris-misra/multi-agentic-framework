@@ -8,7 +8,7 @@ from industrial_agents.agents.base import AgentMessage, AgentRole
 from industrial_agents.orchestration.routing_policy import RoutingPolicy, RoutingRule
 
 
-@pytest.fixture()
+@pytest.fixture
 def policy() -> RoutingPolicy:
     return RoutingPolicy()
 
@@ -28,9 +28,7 @@ class TestRoutingPolicy:
         )
         assert policy.route(msg) == AgentRole.ANOMALY_ROOT_CAUSE
 
-    def test_work_order_routes_correctly(
-        self, policy: RoutingPolicy, trace_id: str
-    ) -> None:
+    def test_work_order_routes_correctly(self, policy: RoutingPolicy, trace_id: str) -> None:
         msg = AgentMessage(
             sender="cli", intent="create work order for PM on press 4", trace_id=trace_id
         )
@@ -60,15 +58,11 @@ class TestRoutingPolicy:
         msg = AgentMessage(sender="cli", intent="emergency stop", trace_id=trace_id)
         assert policy.requires_hitl(msg) is True
 
-    def test_telemetry_does_not_require_hitl(
-        self, policy: RoutingPolicy, trace_id: str
-    ) -> None:
+    def test_telemetry_does_not_require_hitl(self, policy: RoutingPolicy, trace_id: str) -> None:
         msg = AgentMessage(sender="cli", intent="get sensor reading", trace_id=trace_id)
         assert policy.requires_hitl(msg) is False
 
-    def test_safety_beats_anomaly_by_priority(
-        self, policy: RoutingPolicy, trace_id: str
-    ) -> None:
+    def test_safety_beats_anomaly_by_priority(self, policy: RoutingPolicy, trace_id: str) -> None:
         msg = AgentMessage(
             sender="cli",
             intent="hazardous vibration anomaly — emergency shutdown",

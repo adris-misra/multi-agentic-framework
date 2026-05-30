@@ -32,21 +32,20 @@ class OPAClient:
             url = self._path_to_url(policy_path)
             body = {"input": input_data}
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url,
-                    json=body,
-                    timeout=aiohttp.ClientTimeout(total=5),
-                ) as resp:
-                    if resp.status == 200:
-                        return await resp.json()
-                    else:
-                        log.warning(
-                            "opa_query_non_200",
-                            status=resp.status,
-                            policy=policy_path,
-                        )
-                        return {"result": None}
+            async with aiohttp.ClientSession() as session, session.post(
+                url,
+                json=body,
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                else:
+                    log.warning(
+                        "opa_query_non_200",
+                        status=resp.status,
+                        policy=policy_path,
+                    )
+                    return {"result": None}
         except Exception as exc:
             log.error("opa_query_failed", policy=policy_path, error=str(exc))
             # Fail open for read operations; fail closed for writes

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 import structlog
@@ -47,7 +46,11 @@ class LineageBus(GovernanceProtocol):
         return "unsigned:" + hashlib.sha256(decision.inputs_hash.encode()).hexdigest()[:16]
 
     async def check_policy(self, action: str, context: dict[str, Any]) -> bool:
-        if self._agent is not None and hasattr(self._agent, "_opa") and self._agent._opa is not None:
+        if (
+            self._agent is not None
+            and hasattr(self._agent, "_opa")
+            and self._agent._opa is not None
+        ):
             try:
                 result = await self._agent._opa.query(
                     "data.industrial.safety.allow",

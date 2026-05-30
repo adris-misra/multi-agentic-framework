@@ -92,6 +92,9 @@ $RECYCLE.BIN/
 # Docker volumes (local dev)
 docker/volumes/
 
+# Benchmark results — generated artifacts
+benchmarks/results/
+
 # Data — large files stay out of git; use DVC or direct download
 data/synthetic/parquet/
 data/synthetic/mqtt_replay/

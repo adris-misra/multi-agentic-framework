@@ -1,4 +1,4 @@
-﻿"""Safety / Guardrail Agent â€” OPA policy engine, reversibility classifier, CMMC L2 gate."""
+"""Safety / Guardrail Agent â€” OPA policy engine, reversibility classifier, CMMC L2 gate."""
 
 from __future__ import annotations
 
@@ -141,9 +141,9 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
 
         if opa_result is False:
             evaluation["allowed"] = False
-            evaluation["blocking_reasons"] = (
-                evaluation.get("blocking_reasons", []) + ["OPA policy block"]
-            )
+            evaluation["blocking_reasons"] = evaluation.get("blocking_reasons", []) + [
+                "OPA policy block"
+            ]
 
         allowed = bool(evaluation.get("allowed", False))
         confidence = 0.99 if not allowed else 0.9
@@ -161,7 +161,10 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
             reversibility="reversible",
             trace_id=message.trace_id,
             inputs_hash=inputs_hash,
-            timestamp_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat() + "Z",
+            timestamp_utc=datetime.datetime.now(datetime.UTC)
+            .replace(tzinfo=None)
+            .isoformat()
+            + "Z",
         )
         await self.emit_decision(decision)
 
@@ -174,4 +177,3 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
             trace_id=message.trace_id,
             correlation_id=message.correlation_id,
         )
-

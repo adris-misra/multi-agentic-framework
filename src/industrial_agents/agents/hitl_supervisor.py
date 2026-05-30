@@ -1,9 +1,8 @@
-﻿"""HITL Supervisor Agent â€” confidence-threshold human routing via Slack/Teams/email."""
+"""HITL Supervisor Agent â€” confidence-threshold human routing via Slack/Teams/email."""
 
 from __future__ import annotations
 
 import datetime
-import json
 from typing import Any
 
 import structlog
@@ -102,7 +101,10 @@ class HITLSupervisorAgent(BaseIndustrialAgent):
             "intent": message.intent,
             "confidence": message.confidence,
             "payload": message.payload,
-            "created_utc": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat() + "Z",
+            "created_utc": datetime.datetime.now(datetime.UTC)
+            .replace(tzinfo=None)
+            .isoformat()
+            + "Z",
             "status": "pending",
         }
         self._pending.append(pending_entry)
@@ -138,4 +140,3 @@ class HITLSupervisorAgent(BaseIndustrialAgent):
             trace_id=message.trace_id,
             correlation_id=message.correlation_id,
         )
-

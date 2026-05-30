@@ -68,9 +68,7 @@ class TacitKnowledgeCuratorAgent(BaseIndustrialAgent):
             results = self._vector_store.query(query_texts=[query], n_results=k)
             docs = results.get("documents", [[]])[0]
             metas = results.get("metadatas", [[]])[0]
-            return [
-                {"text": d, "metadata": m} for d, m in zip(docs, metas)
-            ]
+            return [{"text": d, "metadata": m} for d, m in zip(docs, metas)]
         except Exception as exc:
             log.warning("vector_store_error", error=str(exc))
             return []
@@ -80,18 +78,16 @@ class TacitKnowledgeCuratorAgent(BaseIndustrialAgent):
         log.info("tacit_knowledge_handle", query=query, trace_id=message.trace_id)
 
         context_docs = await self._retrieve(query)
-        context_text = "\n\n".join(
-            f"[{i+1}] {d['text'][:500]}" for i, d in enumerate(context_docs)
-        ) or "No documents retrieved."
+        context_text = (
+            "\n\n".join(f"[{i + 1}] {d['text'][:500]}" for i, d in enumerate(context_docs))
+            or "No documents retrieved."
+        )
 
         messages = [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": (
-                    f"Query: {query}\n\n"
-                    f"Retrieved context:\n{context_text}"
-                ),
+                "content": (f"Query: {query}\n\nRetrieved context:\n{context_text}"),
             },
         ]
 

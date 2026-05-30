@@ -6,7 +6,8 @@ import asyncio
 import json
 import os
 from collections import deque
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import structlog
 
@@ -18,7 +19,15 @@ _MAX_BUFFER = 1000
 
 
 class SparkplugMessage:
-    __slots__ = ("topic", "group_id", "message_type", "edge_node_id", "device_id", "payload", "timestamp")
+    __slots__ = (
+        "topic",
+        "group_id",
+        "message_type",
+        "edge_node_id",
+        "device_id",
+        "payload",
+        "timestamp",
+    )
 
     def __init__(
         self,
@@ -35,7 +44,7 @@ class SparkplugMessage:
 
         import datetime
 
-        self.timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        self.timestamp = datetime.datetime.now(datetime.UTC).isoformat()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -76,7 +85,7 @@ class SparkplugClient:
     def on_message(self, callback: Callable[[SparkplugMessage], None]) -> None:
         self._callbacks.append(callback)
 
-    def _on_paho_message(self, client: Any, userdata: Any, msg: Any) -> None:
+    def _on_paho_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
         try:
             try:
                 payload_data = json.loads(msg.payload.decode())
@@ -107,7 +116,7 @@ class SparkplugClient:
         self._client = mqtt.Client(client_id=self._client_id, protocol=mqtt.MQTTv5)
         self._client.on_message = self._on_paho_message
 
-        def on_connect(client: Any, userdata: Any, flags: Any, rc: Any, props: Any = None) -> None:
+        def on_connect(client: Any, _userdata: Any, _flags: Any, rc: Any, _props: Any = None) -> None:
             if rc == 0:
                 log.info("sparkplug_connected", host=self._host, port=self._port)
                 for group in self._groups:
@@ -136,9 +145,9 @@ class SparkplugClient:
     def clear_buffer(self) -> None:
         self._buffer.clear()
 
-    async def __aenter__(self) -> "SparkplugClient":
+    async def __aenter__(self) -> SparkplugClient:
         await self.connect()
         return self
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(self, *_args: object) -> None:
         self.disconnect()

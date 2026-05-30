@@ -26,9 +26,7 @@ _SPARKPLUG_PATTERN = re.compile(
 )
 
 # ISA-95 UNS path: <enterprise>/<site>/<area>/<line>/<cell>/<asset>/<signal>
-_ISA95_PATTERN = re.compile(
-    r"^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+){2,6}$"
-)
+_ISA95_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+){2,6}$")
 
 
 class UNSResolution(BaseModel):

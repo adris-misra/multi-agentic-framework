@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 
 def configure_tracing(
@@ -31,11 +32,12 @@ def configure_tracing(
         import structlog
 
         structlog.get_logger(__name__).warning(
-            "opentelemetry_not_installed", hint="pip install opentelemetry-sdk opentelemetry-exporter-otlp"
+            "opentelemetry_not_installed",
+            hint="pip install opentelemetry-sdk opentelemetry-exporter-otlp",
         )
 
 
-def get_tracer(name: str = "industrial-agents") -> "trace.Tracer":
+def get_tracer(name: str = "industrial-agents") -> Any:
     from opentelemetry import trace
 
     return trace.get_tracer(name)

@@ -1,4 +1,4 @@
-﻿"""Anomaly & Root-Cause Agent â€” multivariate anomaly detection + FMEA traversal."""
+"""Anomaly & Root-Cause Agent â€” multivariate anomaly detection + FMEA traversal."""
 
 from __future__ import annotations
 
@@ -41,7 +41,9 @@ class AnomalyRootCauseAgent(BaseIndustrialAgent):
     capabilities = [
         AgentCapability(
             name="detect_anomaly",
-            description="Detect anomalies in time-series data using Matrix Profile + Isolation Forest",
+            description=(
+                "Detect anomalies in time-series data using Matrix Profile + Isolation Forest"
+            ),
             inputs={"series": "list[dict]", "asset_id": "string"},
             outputs={"anomaly_detected": "bool", "anomaly_type": "string", "confidence": "float"},
             purdue_zone_required=3,
@@ -77,9 +79,7 @@ class AnomalyRootCauseAgent(BaseIndustrialAgent):
             {"role": "system", "content": _SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": (
-                    f"Intent: {message.intent}\nPayload: {json.dumps(message.payload)}"
-                ),
+                "content": (f"Intent: {message.intent}\nPayload: {json.dumps(message.payload)}"),
             },
         ]
 
@@ -126,7 +126,10 @@ class AnomalyRootCauseAgent(BaseIndustrialAgent):
                 reversibility="reversible",
                 trace_id=message.trace_id,
                 inputs_hash=inputs_hash,
-                timestamp_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat() + "Z",
+                timestamp_utc=datetime.datetime.now(datetime.UTC)
+                .replace(tzinfo=None)
+                .isoformat()
+                + "Z",
             )
             await self.emit_decision(decision)
 
@@ -139,4 +142,3 @@ class AnomalyRootCauseAgent(BaseIndustrialAgent):
             trace_id=message.trace_id,
             correlation_id=message.correlation_id,
         )
-

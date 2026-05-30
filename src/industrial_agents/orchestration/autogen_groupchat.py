@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 import structlog
 
@@ -64,6 +63,7 @@ class IndustrialGroupChat:
         trace_id = initial_message.trace_id or str(uuid.uuid4())
         history: list[AgentMessage | AgentDecision] = [initial_message]
         current: AgentMessage = initial_message
+        round_num = -1
 
         log.info(
             "groupchat_start",

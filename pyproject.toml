@@ -113,13 +113,15 @@ src = ["src"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "ANN", "S", "B", "A", "C4", "PT", "SIM", "ARG"]
 ignore = [
-  "ANN101", "ANN102",  # missing self/cls type
-  "S101",              # use of assert (fine in tests)
+  "ANN401",  # Any is legitimate for LLM clients and industrial protocol callbacks
+  "S101",    # use of assert (fine in tests)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN", "S", "ARG"]
 "examples/**" = ["ANN", "T201"]
+"benchmarks/**" = ["ANN", "S", "ARG"]
+"src/industrial_agents/synthetic/**" = ["S311"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -151,6 +153,20 @@ module = [
   "sentence_transformers.*",
   "langchain_core.*",
   "structlog.*",
+  "opentelemetry.*",
+  "prometheus_client.*",
+  "aiohttp.*",
+  "anthropic.*",
+  "openai.*",
+  "boto3.*",
+  "botocore.*",
+  "scipy.*",
+  "sklearn.*",
+  "cryptography.*",
+  "typer.*",
+  "jose.*",
+  "streamlit.*",
+  "plotly.*",
 ]
 ignore_missing_imports = true
 

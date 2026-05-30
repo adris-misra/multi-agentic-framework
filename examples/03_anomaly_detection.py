@@ -29,8 +29,7 @@ async def main() -> None:
     gen = UNSDataGenerator(seed=42)
     data = gen.generate(n_hours=6, inject_anomalies=True)
     motor_rows = [
-        r for r in data["rows"]
-        if r["asset_id"] == "motor_01" and r["signal"] == "vibration_rms"
+        r for r in data["rows"] if r["asset_id"] == "motor_01" and r["signal"] == "vibration_rms"
     ]
     max_vib = max(r["value"] for r in motor_rows)
     mean_vib = sum(r["value"] for r in motor_rows) / len(motor_rows)

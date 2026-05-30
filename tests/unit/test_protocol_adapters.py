@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-
-from industrial_agents.governance.pii_redactor import PIIRedactor, redact_dict, redact_string
+from industrial_agents.governance.pii_redactor import PIIRedactor
 from industrial_agents.security.purdue_zones import PurdueZoneEnforcer
 from industrial_agents.tools.uns_context_broker_impl import validate_sparkplug_topic
 

@@ -103,11 +103,8 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
             # No key configured — return a deterministic placeholder
             import hashlib
 
-            return "unsigned:" + hashlib.sha256(
-                decision.inputs_hash.encode()
-            ).hexdigest()[:16]
+            return "unsigned:" + hashlib.sha256(decision.inputs_hash.encode()).hexdigest()[:16]
 
-        from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
         if not isinstance(key, Ed25519PrivateKey):
@@ -128,9 +125,7 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
         return base64.b64encode(raw_sig).decode()
 
     def _to_openlineage(self, decision: AgentDecision) -> dict[str, Any]:
-        nist_function = _NIST_FUNCTION_MAP.get(
-            decision.action.split(":")[0], "MAP"
-        )
+        nist_function = _NIST_FUNCTION_MAP.get(decision.action.split(":")[0], "MAP")
         return {
             "eventType": "COMPLETE",
             "eventTime": decision.timestamp_utc,
@@ -186,17 +181,17 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
                 try:
                     since_dt = datetime.datetime.fromisoformat(since_str.rstrip("Z"))
                     filtered = [
-                        e for e in self._audit_log
-                        if datetime.datetime.fromisoformat(
-                            e.get("eventTime", "").rstrip("Z")
-                        ) >= since_dt
+                        e
+                        for e in self._audit_log
+                        if datetime.datetime.fromisoformat(e.get("eventTime", "").rstrip("Z"))
+                        >= since_dt
                     ]
                 except Exception:
                     pass
 
             if fmt == "csv":
-                import io
                 import csv
+                import io
 
                 buf = io.StringIO()
                 if filtered:

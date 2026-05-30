@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
 
 import structlog
 
@@ -59,8 +58,8 @@ class SecretsVault:
 
     def _from_vault(self, key: str) -> str | None:
         try:
-            import urllib.request
             import json
+            import urllib.request
 
             path = key.lower().replace("_", "/")
             url = f"{self._vault_url}/v1/secret/data/industrial-agents/{path}"

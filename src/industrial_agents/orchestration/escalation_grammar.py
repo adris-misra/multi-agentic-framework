@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 import structlog
+from pydantic import BaseModel, Field
 
 log = structlog.get_logger(__name__)
 
 
-class EscalationLevel(str, Enum):
+class EscalationLevel(StrEnum):
     INFO = "info"
     WARNING = "warning"
     ALERT = "alert"
@@ -20,7 +19,7 @@ class EscalationLevel(str, Enum):
     EMERGENCY = "emergency"
 
 
-class EscalationReason(str, Enum):
+class EscalationReason(StrEnum):
     LOW_CONFIDENCE = "low_confidence"
     POLICY_BLOCK = "policy_block"
     PURDUE_ZONE_VIOLATION = "purdue_zone_violation"

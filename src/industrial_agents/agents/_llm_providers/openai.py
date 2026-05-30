@@ -16,9 +16,7 @@ class OpenAIProvider:
     def __init__(self, api_key: str | None = None) -> None:
         import openai
 
-        self._client = openai.AsyncOpenAI(
-            api_key=api_key or os.environ["OPENAI_API_KEY"]
-        )
+        self._client = openai.AsyncOpenAI(api_key=api_key or os.environ["OPENAI_API_KEY"])
 
     async def complete(
         self,

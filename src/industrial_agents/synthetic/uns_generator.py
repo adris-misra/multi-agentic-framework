@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import datetime
 import json
-import math
 import random
 from pathlib import Path
 from typing import Any
@@ -77,7 +76,7 @@ class UNSDataGenerator:
         enterprise: str = "acme",
         site: str = "chicago",
     ) -> None:
-        self._rng = random.Random(seed)
+        self._rng = random.Random(seed)  # noqa: S311
         self._enterprise = enterprise
         self._site = site
 
@@ -87,7 +86,7 @@ class UNSDataGenerator:
             f"{asset['id']}/{signal}"
         )
 
-    def _sparkplug_topic(self, asset: dict[str, Any], signal: str) -> str:
+    def _sparkplug_topic(self, asset: dict[str, Any], _signal: str) -> str:
         return f"spBv1.0/{self._enterprise}/NDATA/{asset['line']}/{asset['id']}"
 
     def _normal(self, baseline: float, sigma: float) -> float:
@@ -136,7 +135,7 @@ class UNSDataGenerator:
         interval_seconds: int = 60,
         inject_anomalies: bool = True,
     ) -> dict[str, Any]:
-        start = datetime.datetime(2026, 5, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        start = datetime.datetime(2026, 5, 1, 6, 0, 0, tzinfo=datetime.UTC)
         n_points = (n_hours * 3600) // interval_seconds
         all_rows: list[dict[str, Any]] = []
 

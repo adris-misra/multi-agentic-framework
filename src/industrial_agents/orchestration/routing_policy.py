@@ -81,9 +81,7 @@ DEFAULT_RULES: list[RoutingRule] = [
 
 class RoutingPolicy:
     def __init__(self, rules: list[RoutingRule] | None = None) -> None:
-        self._rules = sorted(
-            rules or DEFAULT_RULES, key=lambda r: r.priority, reverse=True
-        )
+        self._rules = sorted(rules or DEFAULT_RULES, key=lambda r: r.priority, reverse=True)
 
     def route(self, message: AgentMessage) -> AgentRole:
         for rule in self._rules:

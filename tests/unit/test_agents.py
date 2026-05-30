@@ -4,18 +4,14 @@ from __future__ import annotations
 
 import json
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
-from industrial_agents.agents.anomaly_root_cause import AnomalyRootCauseAgent
-from industrial_agents.agents.base import AgentDecision, AgentMessage, AgentRole
+from industrial_agents.agents.base import AgentDecision, AgentMessage
 from industrial_agents.agents.governance_lineage import GovernanceLineageAgent
 from industrial_agents.agents.hitl_supervisor import HITLSupervisorAgent
 from industrial_agents.agents.operational_intent import OperationalIntentAgent
-from industrial_agents.agents.safety_guardrail import SafetyGuardrailAgent
-from industrial_agents.agents.shop_floor_copilot import ShopFloorCopilotAgent
-from industrial_agents.agents.tacit_knowledge_curator import TacitKnowledgeCuratorAgent
 from industrial_agents.agents.telemetry_historian import TelemetryHistorianAgent
 from industrial_agents.agents.uns_context_broker import UNSContextBrokerAgent
 from industrial_agents.agents.work_order_mes import WorkOrderMESAgent
@@ -26,7 +22,7 @@ def _make_agent(cls: type, name: str, llm: Any, broker: Any, gov: Any, **kwargs:
 
 
 class TestOperationalIntentAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_parse_intent_returns_message(
         self,
         mock_llm: AsyncMock,
@@ -61,7 +57,7 @@ class TestOperationalIntentAgent:
         assert result.intent == "diagnose_anomaly"
         assert result.confidence == pytest.approx(0.91)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_parse_intent_fallback_on_bad_json(
         self,
         mock_llm: AsyncMock,
@@ -139,7 +135,7 @@ class TestUNSContextBrokerAgent:
 
 
 class TestHITLSupervisorAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_routes_when_below_threshold(
         self,
         mock_llm: Any,
@@ -166,7 +162,7 @@ class TestHITLSupervisorAgent:
         assert result.intent == "hitl_pending"
         assert result.payload["routed"] is True
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_passes_when_above_threshold(
         self,
         mock_llm: Any,
@@ -212,7 +208,7 @@ class TestGovernanceLineageAgent:
         sig = agent.sign_decision(sample_decision)
         assert sig.startswith("unsigned:")
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_emit_lineage_stores_event(
         self,
         mock_llm: Any,
@@ -234,7 +230,7 @@ class TestGovernanceLineageAgent:
 
 
 class TestTelemetryHistorianAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_returns_telemetry_message(
         self,
         mock_llm: AsyncMock,
@@ -278,7 +274,7 @@ class TestTelemetryHistorianAgent:
 
 
 class TestWorkOrderMESAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_work_order(
         self,
         mock_llm: AsyncMock,
@@ -310,9 +306,7 @@ class TestWorkOrderMESAgent:
             "stop_reason": "end_turn",
             "usage": {},
         }
-        agent = _make_agent(
-            WorkOrderMESAgent, "wo", mock_llm, mock_context_broker, mock_governance
-        )
+        agent = _make_agent(WorkOrderMESAgent, "wo", mock_llm, mock_context_broker, mock_governance)
         msg = AgentMessage(
             sender="cli",
             intent="replace bearing on motor 1",
@@ -324,7 +318,7 @@ class TestWorkOrderMESAgent:
         assert result.intent == "work_order_created"
         assert "work_order" in result.payload
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_idempotent_on_second_call(
         self,
         mock_llm: AsyncMock,
@@ -338,9 +332,7 @@ class TestWorkOrderMESAgent:
             "stop_reason": "end_turn",
             "usage": {},
         }
-        agent = _make_agent(
-            WorkOrderMESAgent, "wo", mock_llm, mock_context_broker, mock_governance
-        )
+        agent = _make_agent(WorkOrderMESAgent, "wo", mock_llm, mock_context_broker, mock_governance)
         payload = {"asset_id": "motor_1", "description": "Same job", "action": "create"}
         msg1 = AgentMessage(sender="cli", intent="x", trace_id=trace_id, payload=payload)
         msg2 = AgentMessage(sender="cli", intent="x", trace_id=trace_id, payload=payload)
