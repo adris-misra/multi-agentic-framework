@@ -1,12 +1,15 @@
-"""CLI entry point for the Industrial Agentic Intelligence Framework.
-
-Subcommands are implemented in Phase 2. This module registers the Typer app
-so that `industrial-agents --help` works after `make install`.
-"""
+"""CLI entry point for the Industrial Agentic Intelligence Framework."""
 
 from __future__ import annotations
 
+import uuid
+
+import structlog
 import typer
+
+from industrial_agents.agents.base import AgentMessage
+
+log = structlog.get_logger(__name__)
 
 app = typer.Typer(
     name="industrial-agents",
@@ -23,9 +26,25 @@ def run(
     requirement: str = typer.Argument(..., help="Natural-language operator query."),
     provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider."),
 ) -> None:
-    """Run the full 10-agent pipeline on a single operator query."""
-    typer.echo("⚙  run subcommand — implemented in Phase 2.")
-    raise typer.Exit(code=1)
+    """Run the 10-agent pipeline on a single operator query."""
+    import structlog.contextvars
+
+    import structlog.contextvars
+
+    structlog.contextvars.clear_contextvars()
+    trace_id = str(uuid.uuid4())
+    structlog.contextvars.bind_contextvars(trace_id=trace_id)
+
+    message = AgentMessage(sender="cli", intent=requirement, trace_id=trace_id)
+
+    typer.echo(f"[trace={trace_id}] Routing: {requirement!r}")
+    from industrial_agents.orchestration.routing_policy import RoutingPolicy
+
+    policy = RoutingPolicy()
+    target = policy.route(message)
+    typer.echo(f"→ Routed to: {target.value}")
+    typer.echo(f"LLM provider: {provider} (pipeline wired in Phase 3)")
+    raise typer.Exit(code=0)
 
 
 @app.command()
@@ -33,7 +52,7 @@ def chat(
     provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider."),
 ) -> None:
     """Start an interactive chat session with the operator copilot."""
-    typer.echo("⚙  chat subcommand — implemented in Phase 2.")
+    typer.echo("chat subcommand — implemented in Phase 3.")
     raise typer.Exit(code=1)
 
 

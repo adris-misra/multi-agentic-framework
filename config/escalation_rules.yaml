@@ -1,0 +1,59 @@
+# Escalation rules for the HITL Supervisor agent.
+# These govern when the system pauses for human confirmation.
+
+hitl_confidence_threshold: 0.85  # Below this → route to human
+
+rules:
+  - name: safety_interlock
+    level: critical
+    reason: safety_interlock
+    triggers:
+      - intent_pattern: "(unsafe|hazard|emergency|e-stop|alarm)"
+      - reversibility: irreversible
+    action: halt_and_notify
+    notify_channels:
+      - slack
+      - email
+
+  - name: low_confidence_decision
+    level: warning
+    reason: low_confidence
+    triggers:
+      - confidence_below: 0.85
+    action: route_to_hitl
+    notify_channels:
+      - slack
+
+  - name: purdue_zone_violation
+    level: alert
+    reason: purdue_zone_violation
+    triggers:
+      - agent_zone_above: 3
+      - target_zone_below: 2
+    action: block_and_log
+    notify_channels: []
+
+  - name: write_to_level0
+    level: critical
+    reason: irreversible_action
+    triggers:
+      - target_zone_below: 1
+      - reversibility: irreversible
+    action: halt_and_notify
+    notify_channels:
+      - slack
+      - email
+      - teams
+
+  - name: cmmc_gate
+    level: alert
+    reason: policy_block
+    triggers:
+      - cmmc_control_missing: true
+    action: block_and_log
+    notify_channels:
+      - email
+
+timeouts:
+  hitl_response_seconds: 300   # 5 min before auto-escalate
+  auto_escalate_level: critical
