@@ -59,6 +59,7 @@ class TestUnimplementedCommands:
         result = runner.invoke(app, ["bench"])
         assert result.exit_code != 0
 
-    def test_seed_synthetic_exits_nonzero(self) -> None:
-        result = runner.invoke(app, ["seed-synthetic"])
-        assert result.exit_code != 0
+    def test_seed_synthetic_exits_zero(self) -> None:
+        result = runner.invoke(app, ["seed-synthetic", "--out", "/tmp/test-synthetic"])
+        assert result.exit_code == 0
+        assert "rows" in result.output or "Done" in result.output
