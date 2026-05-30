@@ -58,10 +58,28 @@ def chat(
 def bench(
     suite: str = typer.Option("all", "--suite", "-s", help="Benchmark suite name."),
     model: str = typer.Option("llama3.1:8b", "--model", "-m", help="Model identifier."),
+    provider: str = typer.Option("ollama", "--provider", "-p", help="LLM provider."),
+    out: str = typer.Option("benchmarks/results/", "--out", help="Output directory."),
 ) -> None:
     """Run the Industrial Agent Benchmark (IABENCH-v1)."""
-    typer.echo("⚙  bench subcommand — implemented in Phase 7.")
-    raise typer.Exit(code=1)
+    import asyncio
+    from pathlib import Path
+
+    from benchmarks.iabench import run_suite
+
+    typer.echo(f"Running IABENCH-v1 suite={suite} model={model} provider={provider}...")
+    out_path = Path(out) / f"iabench_{suite}_{model.replace(':', '_')}.json"
+
+    result_suite = asyncio.run(
+        run_suite(suite_name=suite, model=model, provider=provider, output_path=out_path)
+    )
+
+    summary = result_suite.summary()
+    typer.echo(
+        f"Results: {summary['passed']}/{summary['total_tasks']} tasks passed. "
+        f"Saved to {out_path}"
+    )
+    raise typer.Exit(code=0 if result_suite.passed() else 1)
 
 
 @app.command(name="seed-synthetic")
