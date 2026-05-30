@@ -156,7 +156,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
+testpaths = ["tests", "benchmarks"]
 addopts = "--cov=src/industrial_agents --cov-report=term-missing --cov-fail-under=80"
 markers = [
   "integration: requires docker-compose stack",
