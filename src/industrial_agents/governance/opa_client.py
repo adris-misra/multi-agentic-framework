@@ -32,11 +32,14 @@ class OPAClient:
             url = self._path_to_url(policy_path)
             body = {"input": input_data}
 
-            async with aiohttp.ClientSession() as session, session.post(
-                url,
-                json=body,
-                timeout=aiohttp.ClientTimeout(total=5),
-            ) as resp:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(
+                    url,
+                    json=body,
+                    timeout=aiohttp.ClientTimeout(total=5),
+                ) as resp,
+            ):
                 if resp.status == 200:
                     return await resp.json()  # type: ignore[no-any-return]
                 log.warning(

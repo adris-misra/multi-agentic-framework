@@ -3,11 +3,13 @@
 import openai
 from src.agents.base_agent import BaseAgent
 
+
 class TestAgent(BaseAgent):
     """
     Agent that generates test cases for Python code using the pytest framework.
     Includes both unit and integration tests where applicable.
     """
+
     def __init__(self, name):
         super().__init__(name=name)
 
@@ -41,8 +43,8 @@ class TestAgent(BaseAgent):
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a software test engineer."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.3
+            temperature=0.3,
         )
         return response.choices[0].message.content.strip()

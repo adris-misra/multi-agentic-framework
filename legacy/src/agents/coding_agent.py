@@ -3,11 +3,13 @@
 import openai
 from src.agents.base_agent import BaseAgent
 
+
 class CodingAgent(BaseAgent):
     """
     Agent that translates structured software requirements into Python code.
     Can also refine the code based on feedback from code reviewers.
     """
+
     def __init__(self, name):
         super().__init__(name=name)
 
@@ -38,8 +40,8 @@ class CodingAgent(BaseAgent):
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a Python coding assistant."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.3
+            temperature=0.3,
         )
         return response.choices[0].message.content.strip()

@@ -53,9 +53,7 @@ class BenchmarkSuite:
     model: str
     provider: str
     results: list[BenchmarkResult] = field(default_factory=list)
-    start_utc: str = field(
-        default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat()
-    )
+    start_utc: str = field(default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat())
 
     def passed(self) -> bool:
         return all(r.passed for r in self.results)

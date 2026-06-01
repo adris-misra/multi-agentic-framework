@@ -2,9 +2,7 @@ import streamlit as st
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="Multi-Agent Coding Framework",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="Multi-Agent Coding Framework", layout="wide", initial_sidebar_state="expanded"
 )
 
 # --- Page Title ---
@@ -19,7 +17,7 @@ st.header("1️⃣ Provide Your Requirement")
 user_input = st.text_area(
     label="Describe your software requirement in plain English:",
     height=180,
-    placeholder="Example: Build a REST API to manage book inventory using FastAPI and SQLite."
+    placeholder="Example: Build a REST API to manage book inventory using FastAPI and SQLite.",
 )
 
 # --- Simulated Trigger ---
@@ -46,26 +44,34 @@ if st.button("🚀 Run Multi-Agent Pipeline"):
 
             # --- Section: Test Cases ---
             st.header("🧪 4️⃣ Test Cases")
-            st.code("""
+            st.code(
+                """
 import pytest
 
 def test_register_user():
     assert register_user("alice", "alice@example.com") == True
-""", language="python")
+""",
+                language="python",
+            )
 
             # --- Section: Deployment Script ---
             st.header("🚀 5️⃣ Deployment Script")
-            st.code("""
+            st.code(
+                """
 #!/bin/bash
 python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 python main.py
-""", language="bash")
+""",
+                language="bash",
+            )
 
             # --- Section: Streamlit UI Code ---
             st.header("🌐 6️⃣ Streamlit UI Code")
-            st.code("# Placeholder: Generated Streamlit UI code will be shown here", language="python")
+            st.code(
+                "# Placeholder: Generated Streamlit UI code will be shown here", language="python"
+            )
 
 # --- Sidebar: Developer Notes ---
 st.sidebar.header("ℹ️ Developer Notes")

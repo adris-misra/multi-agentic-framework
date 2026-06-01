@@ -3,11 +3,13 @@
 import openai
 from src.agents.base_agent import BaseAgent
 
+
 class RequirementAgent(BaseAgent):
     """
     Agent that converts raw natural language input into a structured software requirement.
     Expected output is a dictionary with keys: goal, features, constraints, inputs, outputs.
     """
+
     def __init__(self, name):
         super().__init__(name=name)
 
@@ -41,13 +43,7 @@ class RequirementAgent(BaseAgent):
         except Exception:
             pass
         # Fallback if LLM output is invalid
-        return {
-            "goal": "Unknown",
-            "features": [],
-            "constraints": [],
-            "inputs": [],
-            "outputs": []
-        }
+        return {"goal": "Unknown", "features": [], "constraints": [], "inputs": [], "outputs": []}
 
     def llm_complete(self, prompt: str) -> str:
         """
@@ -58,8 +54,8 @@ class RequirementAgent(BaseAgent):
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a requirements analyst."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.2
+            temperature=0.2,
         )
         return response.choices[0].message.content

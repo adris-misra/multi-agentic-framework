@@ -3,11 +3,13 @@
 import openai
 from src.agents.base_agent import BaseAgent
 
+
 class DocumentationAgent(BaseAgent):
     """
     Agent that generates structured documentation for Python code.
     Covers descriptions, parameters, return values, and usage examples.
     """
+
     def __init__(self, name):
         super().__init__(name=name)
 
@@ -42,8 +44,8 @@ class DocumentationAgent(BaseAgent):
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a technical documentation specialist."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.2
+            temperature=0.2,
         )
         return response.choices[0].message.content.strip()

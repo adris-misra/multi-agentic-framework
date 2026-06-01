@@ -104,9 +104,7 @@ class HITLSupervisorAgent(BaseIndustrialAgent):
             "intent": message.intent,
             "confidence": message.confidence,
             "payload": message.payload,
-            "created_utc": datetime.datetime.now(datetime.UTC)
-            .replace(tzinfo=None)
-            .isoformat()
+            "created_utc": datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
             + "Z",
             "status": "pending",
         }

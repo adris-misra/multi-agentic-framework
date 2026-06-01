@@ -68,9 +68,7 @@ class SecretsVault:
 
             parsed = urlsplit(url)
             if parsed.scheme not in ("http", "https"):
-                raise ValueError(
-                    f"Vault URL must use http or https scheme, got: {parsed.scheme!r}"
-                )
+                raise ValueError(f"Vault URL must use http or https scheme, got: {parsed.scheme!r}")
 
             req = urllib.request.Request(  # noqa: S310  # nosec B310 — scheme validated above
                 url,

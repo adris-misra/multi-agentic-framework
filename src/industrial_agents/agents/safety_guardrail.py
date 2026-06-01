@@ -165,9 +165,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
             reversibility="reversible",
             trace_id=message.trace_id,
             inputs_hash=inputs_hash,
-            timestamp_utc=datetime.datetime.now(datetime.UTC)
-            .replace(tzinfo=None)
-            .isoformat()
+            timestamp_utc=datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
             + "Z",
         )
         await self.emit_decision(decision)
