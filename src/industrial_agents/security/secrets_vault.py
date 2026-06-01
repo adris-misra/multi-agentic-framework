@@ -72,11 +72,11 @@ class SecretsVault:
                     f"Vault URL must use http or https scheme, got: {parsed.scheme!r}"
                 )
 
-            req = urllib.request.Request(
+            req = urllib.request.Request(  # noqa: S310  # nosec B310 — scheme validated above
                 url,
                 headers={"X-Vault-Token": self._vault_token or ""},
             )
-            with urllib.request.urlopen(req, timeout=3) as resp:  # nosec B310 — scheme validated above
+            with urllib.request.urlopen(req, timeout=3) as resp:  # noqa: S310  # nosec B310 — scheme validated above
                 data = json.loads(resp.read())
                 value = data.get("data", {}).get("data", {}).get("value")
                 if value:
