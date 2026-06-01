@@ -6,9 +6,12 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
 
 
 class AgentRole(StrEnum):
@@ -89,7 +92,7 @@ class BaseIndustrialAgent(ABC):
     def __init__(
         self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
     ) -> None:

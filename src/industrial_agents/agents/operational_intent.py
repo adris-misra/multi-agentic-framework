@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from pydantic import BaseModel, Field
@@ -16,6 +16,9 @@ from industrial_agents.agents.base import (
     ContextBrokerProtocol,
     GovernanceProtocol,
 )
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
 
 log = structlog.get_logger(__name__)
 
@@ -60,7 +63,7 @@ class OperationalIntentAgent(BaseIndustrialAgent):
     def __init__(
         self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
     ) -> None:

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
+
+if TYPE_CHECKING:
+    from asyncua import Client as _AsyncUAClient
 
 log = structlog.get_logger(__name__)
 
@@ -18,7 +21,7 @@ class OPCUAReading:
     def __init__(
         self,
         node_id: str,
-        value: Any,
+        value: object,
         quality: str,
         source_timestamp: str,
         server_timestamp: str,
@@ -58,7 +61,7 @@ class OPCUAClient:
         self._username = username
         self._password = password
         self._purdue_zone = purdue_zone
-        self._client: Any = None
+        self._client: _AsyncUAClient | None = None
 
     async def connect(self) -> None:
         try:
@@ -114,7 +117,7 @@ class OPCUAClient:
             results.append(reading)
         return results
 
-    def write_node(self, *args: Any, **kwargs: Any) -> None:
+    def write_node(self, *args: object, **kwargs: object) -> None:
         raise PermissionError(
             "OPCUAClient is read-only. Write operations must go through the "
             "SafetyGuardrailAgent and WorkOrderMESAgent with HITL approval."

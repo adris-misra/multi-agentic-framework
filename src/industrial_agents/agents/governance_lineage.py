@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import datetime
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import structlog
 
@@ -19,7 +19,17 @@ from industrial_agents.agents.base import (
     GovernanceProtocol,
 )
 
+if TYPE_CHECKING:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from industrial_agents.agents._llm import LLMProvider
+
 log = structlog.get_logger(__name__)
+
+
+class _OpenLineageProtocol(Protocol):
+    async def emit(self, event: dict[str, Any]) -> None: ...
+
 
 # NIST AI RMF function mappings for agent actions
 _NIST_FUNCTION_MAP: dict[str, str] = {
@@ -70,19 +80,19 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
     def __init__(
         self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
         signing_key_path: str | None = None,
-        openlineage_client: Any = None,
+        openlineage_client: _OpenLineageProtocol | None = None,
     ) -> None:
         super().__init__(name, llm, context_broker, governance)
         self._signing_key_path = signing_key_path
         self._ol_client = openlineage_client
-        self._private_key: Any = None
+        self._private_key: Ed25519PrivateKey | None = None
         self._audit_log: list[dict[str, Any]] = []
 
-    def _load_key(self) -> Any:
+    def _load_key(self) -> Ed25519PrivateKey | None:
         if self._private_key is not None:
             return self._private_key
         if self._signing_key_path is None:

@@ -98,6 +98,8 @@ benchmarks/results/
 # Data — large files stay out of git; use DVC or direct download
 data/synthetic/parquet/
 data/synthetic/mqtt_replay/
+data/synthetic/*.jsonl
+data/synthetic/*.meta.json
 # Keep SOP and expert-notes markdown (small text)
 !data/synthetic/sops/
 !data/synthetic/expert_notes/

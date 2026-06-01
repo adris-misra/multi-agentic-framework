@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import structlog
 
@@ -17,7 +17,14 @@ from industrial_agents.agents.base import (
     GovernanceProtocol,
 )
 
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
+
 log = structlog.get_logger(__name__)
+
+
+class _VectorStoreProtocol(Protocol):
+    def query(self, query_texts: list[str], n_results: int) -> dict[str, Any]: ...
 
 _SYSTEM_PROMPT = """You are the Tacit-Knowledge Curator for an industrial manufacturing facility.
 You have access to SOPs, OEM manuals, expert interview transcripts, and historical work orders.
@@ -53,10 +60,10 @@ class TacitKnowledgeCuratorAgent(BaseIndustrialAgent):
     def __init__(
         self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
-        vector_store: Any = None,
+        vector_store: _VectorStoreProtocol | None = None,
     ) -> None:
         super().__init__(name, llm, context_broker, governance)
         self._vector_store = vector_store

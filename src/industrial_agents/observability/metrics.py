@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from prometheus_client import Counter, Histogram
 
 
 class IndustrialMetrics:
@@ -16,11 +19,11 @@ class IndustrialMetrics:
 
     def __init__(self) -> None:
         self._initialized = False
-        self._agent_requests: Any = None
-        self._agent_errors: Any = None
-        self._decision_latency: Any = None
-        self._hitl_escalations: Any = None
-        self._anomalies_detected: Any = None
+        self._agent_requests: Counter | None = None
+        self._agent_errors: Counter | None = None
+        self._decision_latency: Histogram | None = None
+        self._hitl_escalations: Counter | None = None
+        self._anomalies_detected: Counter | None = None
 
     @classmethod
     def get(cls) -> IndustrialMetrics:

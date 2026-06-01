@@ -7,15 +7,23 @@ import json
 import os
 from collections import deque
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import structlog
+
+if TYPE_CHECKING:
+    import paho.mqtt.client as mqtt
 
 log = structlog.get_logger(__name__)
 
 # Sparkplug B topic structure: spBv1.0/<group_id>/<message_type>/<edge_node_id>[/<device_id>]
 _SPARKPLUG_TOPIC_PREFIX = "spBv1.0"
 _MAX_BUFFER = 1000
+
+
+class _MQTTMessage(Protocol):
+    topic: str
+    payload: bytes
 
 
 class SparkplugMessage:
@@ -78,14 +86,14 @@ class SparkplugClient:
         self._client_id = client_id
         self._groups = subscribe_groups or ["#"]
         self._buffer: deque[SparkplugMessage] = deque(maxlen=_MAX_BUFFER)
-        self._client: Any = None
+        self._client: mqtt.Client | None = None
         self._callbacks: list[Callable[[SparkplugMessage], None]] = []
         self._loop: asyncio.AbstractEventLoop | None = None
 
     def on_message(self, callback: Callable[[SparkplugMessage], None]) -> None:
         self._callbacks.append(callback)
 
-    def _on_paho_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
+    def _on_paho_message(self, _client: object, _userdata: object, msg: _MQTTMessage) -> None:
         try:
             try:
                 payload_data = json.loads(msg.payload.decode())
@@ -111,12 +119,18 @@ class SparkplugClient:
             log.error("sparkplug_message_parse_error", error=str(exc))
 
     async def connect(self) -> None:
-        import paho.mqtt.client as mqtt
+        import paho.mqtt.client as mqtt_mod
 
-        self._client = mqtt.Client(client_id=self._client_id, protocol=mqtt.MQTTv5)
+        self._client = mqtt_mod.Client(client_id=self._client_id, protocol=mqtt_mod.MQTTv5)
         self._client.on_message = self._on_paho_message
 
-        def on_connect(client: Any, _userdata: Any, _flags: Any, rc: Any, _props: Any = None) -> None:
+        def on_connect(
+            client: mqtt.Client,
+            _userdata: object,
+            _flags: object,
+            rc: int,
+            _props: object = None,
+        ) -> None:
             if rc == 0:
                 log.info("sparkplug_connected", host=self._host, port=self._port)
                 for group in self._groups:

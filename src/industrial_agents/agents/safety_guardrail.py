@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 
@@ -18,6 +18,10 @@ from industrial_agents.agents.base import (
     ContextBrokerProtocol,
     GovernanceProtocol,
 )
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
+    from industrial_agents.governance.opa_client import OPAClient
 
 log = structlog.get_logger(__name__)
 
@@ -67,10 +71,10 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
     def __init__(
         self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
-        opa_client: Any = None,
+        opa_client: OPAClient | None = None,
     ) -> None:
         super().__init__(name, llm, context_broker, governance)
         self._opa = opa_client
