@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import datetime
 import json
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
 import structlog
 
@@ -28,7 +28,7 @@ log = structlog.get_logger(__name__)
 
 
 class _OpenLineageProtocol(Protocol):
-    async def emit(self, event: dict[str, Any]) -> None: ...
+    async def emit(self: Self, event: dict[str, Any]) -> None: ...
 
 
 # NIST AI RMF function mappings for agent actions
@@ -78,7 +78,7 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
@@ -92,7 +92,7 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
         self._private_key: Ed25519PrivateKey | None = None
         self._audit_log: list[dict[str, Any]] = []
 
-    def _load_key(self) -> Ed25519PrivateKey | None:
+    def _load_key(self: Self) -> Ed25519PrivateKey | None:
         if self._private_key is not None:
             return self._private_key
         if self._signing_key_path is None:
@@ -101,13 +101,13 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
             with open(self._signing_key_path, "rb") as fh:
-                self._private_key = load_pem_private_key(fh.read(), password=None)
+                self._private_key = load_pem_private_key(fh.read(), password=None)  # type: ignore[assignment]
             return self._private_key
         except Exception as exc:
             log.warning("signing_key_load_failed", error=str(exc))
             return None
 
-    def sign_decision(self, decision: AgentDecision) -> str:
+    def sign_decision(self: Self, decision: AgentDecision) -> str:
         key = self._load_key()
         if key is None:
             # No key configured — return a deterministic placeholder
@@ -134,7 +134,7 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
         raw_sig = key.sign(payload)
         return base64.b64encode(raw_sig).decode()
 
-    def _to_openlineage(self, decision: AgentDecision) -> dict[str, Any]:
+    def _to_openlineage(self: Self, decision: AgentDecision) -> dict[str, Any]:
         nist_function = _NIST_FUNCTION_MAP.get(decision.action.split(":")[0], "MAP")
         return {
             "eventType": "COMPLETE",
@@ -162,7 +162,7 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
             },
         }
 
-    async def emit_lineage(self, decision: AgentDecision) -> None:
+    async def emit_lineage(self: Self, decision: AgentDecision) -> None:
         event = self._to_openlineage(decision)
         self._audit_log.append(event)
 
@@ -179,7 +179,7 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
             trace_id=decision.trace_id,
         )
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         action = message.payload.get("action", "export")
         log.info("governance_handle", action=action, trace_id=message.trace_id)
 
@@ -196,8 +196,8 @@ class GovernanceLineageAgent(BaseIndustrialAgent):
                         if datetime.datetime.fromisoformat(e.get("eventTime", "").rstrip("Z"))
                         >= since_dt
                     ]
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.debug("lineage_filter_parse_error", since=since_str, error=str(exc))
 
             if fmt == "csv":
                 import csv

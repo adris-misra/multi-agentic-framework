@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
 import structlog
 
@@ -24,7 +24,7 @@ log = structlog.get_logger(__name__)
 
 
 class _VectorStoreProtocol(Protocol):
-    def query(self, query_texts: list[str], n_results: int) -> dict[str, Any]: ...
+    def query(self: Self, query_texts: list[str], n_results: int) -> dict[str, Any]: ...
 
 _SYSTEM_PROMPT = """You are the Tacit-Knowledge Curator for an industrial manufacturing facility.
 You have access to SOPs, OEM manuals, expert interview transcripts, and historical work orders.
@@ -58,7 +58,7 @@ class TacitKnowledgeCuratorAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
@@ -68,19 +68,19 @@ class TacitKnowledgeCuratorAgent(BaseIndustrialAgent):
         super().__init__(name, llm, context_broker, governance)
         self._vector_store = vector_store
 
-    async def _retrieve(self, query: str, k: int = 5) -> list[dict[str, Any]]:
+    async def _retrieve(self: Self, query: str, k: int = 5) -> list[dict[str, Any]]:
         if self._vector_store is None:
             return []
         try:
             results = self._vector_store.query(query_texts=[query], n_results=k)
             docs = results.get("documents", [[]])[0]
             metas = results.get("metadatas", [[]])[0]
-            return [{"text": d, "metadata": m} for d, m in zip(docs, metas)]
+            return [{"text": d, "metadata": m} for d, m in zip(docs, metas, strict=False)]
         except Exception as exc:
             log.warning("vector_store_error", error=str(exc))
             return []
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         query = message.payload.get("query", message.intent)
         log.info("tacit_knowledge_handle", query=query, trace_id=message.trace_id)
 

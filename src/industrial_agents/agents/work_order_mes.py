@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import structlog
 
@@ -68,7 +68,7 @@ class WorkOrderMESAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
@@ -79,10 +79,10 @@ class WorkOrderMESAgent(BaseIndustrialAgent):
         self._cmms = cmms_client
         self._idempotency_store: dict[str, dict[str, Any]] = {}
 
-    def _idempotency_key(self, asset_id: str, description: str) -> str:
+    def _idempotency_key(self: Self, asset_id: str, description: str) -> str:
         return hashlib.sha256(f"{asset_id}:{description}".encode()).hexdigest()[:16]
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         action = message.payload.get("action", "create")
         log.info(
             "work_order_mes_handle",
@@ -95,7 +95,7 @@ class WorkOrderMESAgent(BaseIndustrialAgent):
             return await self._dispatch(message)
         return await self._create(message)
 
-    async def _create(self, message: AgentMessage) -> AgentMessage:
+    async def _create(self: Self, message: AgentMessage) -> AgentMessage:
         asset_id = message.payload.get("asset_id", "unknown")
         description = message.payload.get("description", message.intent)
 
@@ -159,7 +159,7 @@ class WorkOrderMESAgent(BaseIndustrialAgent):
             correlation_id=message.correlation_id,
         )
 
-    async def _dispatch(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def _dispatch(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         wo_id = message.payload.get("work_order_id", "unknown")
         inputs_hash = hashlib.sha256(wo_id.encode()).hexdigest()
 

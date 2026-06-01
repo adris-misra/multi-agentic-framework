@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Self
 
 import structlog
 
@@ -13,7 +13,7 @@ _DEFAULT_MODEL = "anthropic.claude-3-5-sonnet-20241022-v2:0"
 
 
 class BedrockProvider:
-    def __init__(self) -> None:
+    def __init__(self: Self) -> None:
         import boto3
 
         self._client = boto3.client(
@@ -22,7 +22,7 @@ class BedrockProvider:
         )
 
     async def complete(
-        self,
+        self: Self,
         messages: list[dict[str, str]],
         *,
         model: str | None = None,

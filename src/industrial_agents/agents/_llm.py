@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, Self, runtime_checkable
 
 import structlog
 
@@ -13,7 +13,7 @@ log = structlog.get_logger(__name__)
 @runtime_checkable
 class LLMProvider(Protocol):
     async def complete(
-        self,
+        self: Self,
         messages: list[dict[str, str]],
         *,
         model: str | None = None,
@@ -25,7 +25,7 @@ class LLMProvider(Protocol):
 
 def get_llm_provider(provider: str | None = None) -> LLMProvider:
     """Return an LLMProvider instance based on env config or explicit name."""
-    resolved = provider or os.getenv("LLM_PROVIDER", "anthropic")
+    resolved: str = provider or os.getenv("LLM_PROVIDER", "anthropic")
     log.debug("llm_provider_selected", provider=resolved)
 
     match resolved.lower():

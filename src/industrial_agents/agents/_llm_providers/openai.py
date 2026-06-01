@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Self
 
 import structlog
 
@@ -13,13 +13,13 @@ _DEFAULT_MODEL = "gpt-4o"
 
 
 class OpenAIProvider:
-    def __init__(self, api_key: str | None = None) -> None:
+    def __init__(self: Self, api_key: str | None = None) -> None:
         import openai
 
         self._client = openai.AsyncOpenAI(api_key=api_key or os.environ["OPENAI_API_KEY"])
 
     async def complete(
-        self,
+        self: Self,
         messages: list[dict[str, str]],
         *,
         model: str | None = None,

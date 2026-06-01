@@ -7,7 +7,7 @@ import json
 import os
 from collections import deque
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
 import structlog
 
@@ -38,7 +38,7 @@ class SparkplugMessage:
     )
 
     def __init__(
-        self,
+        self: Self,
         topic: str,
         payload: dict[str, Any],
     ) -> None:
@@ -54,7 +54,7 @@ class SparkplugMessage:
 
         self.timestamp = datetime.datetime.now(datetime.UTC).isoformat()
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self: Self) -> dict[str, Any]:
         return {
             "topic": self.topic,
             "group_id": self.group_id,
@@ -75,13 +75,13 @@ class SparkplugClient:
     """
 
     def __init__(
-        self,
+        self: Self,
         broker_host: str | None = None,
         broker_port: int = 1883,
         client_id: str = "industrial-agents",
         subscribe_groups: list[str] | None = None,
     ) -> None:
-        self._host = broker_host or os.getenv("MQTT_BROKER", "localhost")
+        self._host: str = broker_host or os.getenv("MQTT_BROKER", "localhost")
         self._port = int(os.getenv("MQTT_PORT", str(broker_port)))
         self._client_id = client_id
         self._groups = subscribe_groups or ["#"]
@@ -90,10 +90,12 @@ class SparkplugClient:
         self._callbacks: list[Callable[[SparkplugMessage], None]] = []
         self._loop: asyncio.AbstractEventLoop | None = None
 
-    def on_message(self, callback: Callable[[SparkplugMessage], None]) -> None:
+    def on_message(self: Self, callback: Callable[[SparkplugMessage], None]) -> None:
         self._callbacks.append(callback)
 
-    def _on_paho_message(self, _client: object, _userdata: object, msg: _MQTTMessage) -> None:
+    def _on_paho_message(
+        self: Self, _client: object, _userdata: object, msg: _MQTTMessage
+    ) -> None:
         try:
             try:
                 payload_data = json.loads(msg.payload.decode())
@@ -118,11 +120,11 @@ class SparkplugClient:
         except Exception as exc:
             log.error("sparkplug_message_parse_error", error=str(exc))
 
-    async def connect(self) -> None:
+    async def connect(self: Self) -> None:
         import paho.mqtt.client as mqtt_mod
 
         self._client = mqtt_mod.Client(client_id=self._client_id, protocol=mqtt_mod.MQTTv5)
-        self._client.on_message = self._on_paho_message
+        self._client.on_message = self._on_paho_message  # type: ignore[assignment]
 
         def on_connect(
             client: mqtt.Client,
@@ -140,28 +142,28 @@ class SparkplugClient:
             else:
                 log.error("sparkplug_connect_failed", rc=rc)
 
-        self._client.on_connect = on_connect
+        self._client.on_connect = on_connect  # type: ignore[assignment]
         self._client.connect(self._host, self._port, keepalive=60)
         self._client.loop_start()
 
-    def disconnect(self) -> None:
+    def disconnect(self: Self) -> None:
         if self._client is not None:
             self._client.loop_stop()
             self._client.disconnect()
             log.info("sparkplug_disconnected")
 
-    def get_buffered_messages(self, limit: int | None = None) -> list[SparkplugMessage]:
+    def get_buffered_messages(self: Self, limit: int | None = None) -> list[SparkplugMessage]:
         msgs = list(self._buffer)
         if limit is not None:
             return msgs[-limit:]
         return msgs
 
-    def clear_buffer(self) -> None:
+    def clear_buffer(self: Self) -> None:
         self._buffer.clear()
 
-    async def __aenter__(self) -> SparkplugClient:
+    async def __aenter__(self: Self) -> SparkplugClient:
         await self.connect()
         return self
 
-    async def __aexit__(self, *_args: object) -> None:
+    async def __aexit__(self: Self, *_args: object) -> None:
         self.disconnect()

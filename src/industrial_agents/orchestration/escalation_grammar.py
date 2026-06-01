@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
+from typing import Any, Self
 
 import structlog
 from pydantic import BaseModel, Field
@@ -40,10 +40,10 @@ class EscalationEvent(BaseModel):
     context: dict[str, Any] = Field(default_factory=dict)
     resolved: bool = False
 
-    def is_blocking(self) -> bool:
+    def is_blocking(self: Self) -> bool:
         return self.level in {EscalationLevel.CRITICAL, EscalationLevel.EMERGENCY}
 
-    def requires_hitl(self) -> bool:
+    def requires_hitl(self: Self) -> bool:
         return self.reason in {
             EscalationReason.LOW_CONFIDENCE,
             EscalationReason.IRREVERSIBLE_ACTION,
@@ -55,10 +55,10 @@ class EscalationEvent(BaseModel):
 class EscalationRouter:
     """Routes EscalationEvents to the appropriate handler (HITL, logging, etc.)."""
 
-    def __init__(self, hitl_threshold: float = 0.85) -> None:
+    def __init__(self: Self, hitl_threshold: float = 0.85) -> None:
         self._hitl_threshold = hitl_threshold
 
-    def evaluate(self, event: EscalationEvent) -> bool:
+    def evaluate(self: Self, event: EscalationEvent) -> bool:
         """Return True if execution should be halted pending HITL resolution."""
         if event.is_blocking():
             log.warning(

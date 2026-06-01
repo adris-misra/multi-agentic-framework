@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Self
 
 import structlog
 
@@ -13,13 +13,13 @@ _DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 class AnthropicProvider:
-    def __init__(self, api_key: str | None = None) -> None:
+    def __init__(self: Self, api_key: str | None = None) -> None:
         import anthropic
 
         self._client = anthropic.AsyncAnthropic(api_key=api_key or os.environ["ANTHROPIC_API_KEY"])
 
     async def complete(
-        self,
+        self: Self,
         messages: list[dict[str, str]],
         *,
         model: str | None = None,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Self
 
 import structlog
 
@@ -19,14 +19,14 @@ class LineageBus(GovernanceProtocol):
     """
 
     def __init__(
-        self,
+        self: Self,
         governance_agent: GovernanceLineageAgent | None = None,
         signing_key_path: str | None = None,
     ) -> None:
         self._agent = governance_agent
         self._signing_key_path = signing_key_path
 
-    async def emit_lineage(self, decision: AgentDecision) -> None:
+    async def emit_lineage(self: Self, decision: AgentDecision) -> None:
         if self._agent is not None:
             await self._agent.emit_lineage(decision)
         else:
@@ -37,7 +37,7 @@ class LineageBus(GovernanceProtocol):
                 trace_id=decision.trace_id,
             )
 
-    async def sign_decision(self, decision: AgentDecision) -> str:
+    async def sign_decision(self: Self, decision: AgentDecision) -> str:
         if self._agent is not None:
             return self._agent.sign_decision(decision)
         # Fallback: unsigned placeholder
@@ -45,7 +45,7 @@ class LineageBus(GovernanceProtocol):
 
         return "unsigned:" + hashlib.sha256(decision.inputs_hash.encode()).hexdigest()[:16]
 
-    async def check_policy(self, action: str, context: dict[str, Any]) -> bool:
+    async def check_policy(self: Self, action: str, context: dict[str, Any]) -> bool:
         if (
             self._agent is not None
             and hasattr(self._agent, "_opa")
@@ -61,7 +61,7 @@ class LineageBus(GovernanceProtocol):
                 log.warning("lineage_bus_policy_check_error", error=str(exc))
         return True
 
-    def get_audit_log(self) -> list[dict[str, Any]]:
+    def get_audit_log(self: Self) -> list[dict[str, Any]]:
         if self._agent is not None:
             return list(self._agent._audit_log)
         return []

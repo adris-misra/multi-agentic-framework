@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import structlog
 
@@ -69,7 +69,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
         llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
@@ -79,7 +79,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
         super().__init__(name, llm, context_broker, governance)
         self._opa = opa_client
 
-    async def _check_opa(self, action: str, context: dict[str, Any]) -> bool | None:
+    async def _check_opa(self: Self, action: str, context: dict[str, Any]) -> bool | None:
         if self._opa is None:
             return None
         try:
@@ -92,7 +92,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
             log.warning("opa_check_failed", error=str(exc))
             return None
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         action = message.payload.get("action", message.intent)
         target_zone = int(message.payload.get("target_zone", 3))
         context = message.payload.get("context", {})

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from typing import Self
 
 import structlog
 
@@ -22,10 +23,10 @@ class RoutingRule:
     requires_hitl: bool = False
     _compiled: re.Pattern[str] = field(init=False, repr=False)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self: Self) -> None:
         self._compiled = re.compile(self.intent_pattern, re.IGNORECASE)
 
-    def matches(self, intent: str) -> bool:
+    def matches(self: Self, intent: str) -> bool:
         return bool(self._compiled.search(intent))
 
 
@@ -80,10 +81,10 @@ DEFAULT_RULES: list[RoutingRule] = [
 
 
 class RoutingPolicy:
-    def __init__(self, rules: list[RoutingRule] | None = None) -> None:
+    def __init__(self: Self, rules: list[RoutingRule] | None = None) -> None:
         self._rules = sorted(rules or DEFAULT_RULES, key=lambda r: r.priority, reverse=True)
 
-    def route(self, message: AgentMessage) -> AgentRole:
+    def route(self: Self, message: AgentMessage) -> AgentRole:
         for rule in self._rules:
             if rule.matches(message.intent):
                 log.debug(
@@ -95,8 +96,5 @@ class RoutingPolicy:
                 return rule.target_role
         return AgentRole.OPERATIONAL_INTENT
 
-    def requires_hitl(self, message: AgentMessage) -> bool:
-        for rule in self._rules:
-            if rule.matches(message.intent) and rule.requires_hitl:
-                return True
-        return False
+    def requires_hitl(self: Self, message: AgentMessage) -> bool:
+        return any(rule.matches(message.intent) and rule.requires_hitl for rule in self._rules)

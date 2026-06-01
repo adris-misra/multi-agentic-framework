@@ -1,0 +1,11 @@
+# Normalize line endings to LF on all platforms
+* text=auto eol=lf
+
+# Binary files — no line-ending conversion
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.parquet binary
+*.whl binary
+*.egg binary
