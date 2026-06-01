@@ -25,7 +25,7 @@ class LLMProvider(Protocol):
 
 def get_llm_provider(provider: str | None = None) -> LLMProvider:
     """Return an LLMProvider instance based on env config or explicit name."""
-    resolved: str = provider or os.getenv("LLM_PROVIDER", "anthropic")
+    resolved: str = provider if provider is not None else os.getenv("LLM_PROVIDER", "anthropic")
     log.debug("llm_provider_selected", provider=resolved)
 
     match resolved.lower():

@@ -26,6 +26,7 @@ log = structlog.get_logger(__name__)
 class _VectorStoreProtocol(Protocol):
     def query(self: Self, query_texts: list[str], n_results: int) -> dict[str, Any]: ...
 
+
 _SYSTEM_PROMPT = """You are the Tacit-Knowledge Curator for an industrial manufacturing facility.
 You have access to SOPs, OEM manuals, expert interview transcripts, and historical work orders.
 

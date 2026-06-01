@@ -1,4 +1,4 @@
-"""HITL Supervisor Agent â€” confidence-threshold human routing via Slack/Teams/email."""
+"""HITL Supervisor Agent — confidence-threshold human routing via Slack/Teams/email."""
 
 from __future__ import annotations
 

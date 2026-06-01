@@ -39,13 +39,12 @@ class OPAClient:
             ) as resp:
                 if resp.status == 200:
                     return await resp.json()  # type: ignore[no-any-return]
-                else:
-                    log.warning(
-                        "opa_query_non_200",
-                        status=resp.status,
-                        policy=policy_path,
-                    )
-                    return {"result": None}
+                log.warning(
+                    "opa_query_non_200",
+                    status=resp.status,
+                    policy=policy_path,
+                )
+                return {"result": None}
         except Exception as exc:
             log.error("opa_query_failed", policy=policy_path, error=str(exc))
             # Fail open for read operations; fail closed for writes

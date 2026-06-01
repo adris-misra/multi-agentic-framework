@@ -1,4 +1,4 @@
-"""Work-Order & MES Dispatch Agent â€” writes to CMMS/MES with dry-run diff + idempotency."""
+"""Work-Order & MES Dispatch Agent — writes to CMMS/MES with dry-run diff + idempotency."""
 
 from __future__ import annotations
 

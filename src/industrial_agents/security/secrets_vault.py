@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Self
+from urllib.parse import urlsplit
 
 import structlog
 
@@ -64,11 +65,18 @@ class SecretsVault:
 
             path = key.lower().replace("_", "/")
             url = f"{self._vault_url}/v1/secret/data/industrial-agents/{path}"
-            req = urllib.request.Request(  # noqa: S310
+
+            parsed = urlsplit(url)
+            if parsed.scheme not in ("http", "https"):
+                raise ValueError(
+                    f"Vault URL must use http or https scheme, got: {parsed.scheme!r}"
+                )
+
+            req = urllib.request.Request(
                 url,
                 headers={"X-Vault-Token": self._vault_token or ""},
             )
-            with urllib.request.urlopen(req, timeout=3) as resp:  # noqa: S310  # nosec B310 -- URL is operator-configured Vault address, not user-supplied input
+            with urllib.request.urlopen(req, timeout=3) as resp:  # nosec B310 — scheme validated above
                 data = json.loads(resp.read())
                 value = data.get("data", {}).get("data", {}).get("value")
                 if value:

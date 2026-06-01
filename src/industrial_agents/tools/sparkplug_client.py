@@ -81,7 +81,10 @@ class SparkplugClient:
         client_id: str = "industrial-agents",
         subscribe_groups: list[str] | None = None,
     ) -> None:
-        self._host: str = broker_host or os.getenv("MQTT_BROKER", "localhost")
+        # Use explicit None-check so mypy infers str (not str|None) for self._host
+        self._host: str = (
+            broker_host if broker_host is not None else os.getenv("MQTT_BROKER", "localhost")
+        )
         self._port = int(os.getenv("MQTT_PORT", str(broker_port)))
         self._client_id = client_id
         self._groups = subscribe_groups or ["#"]
@@ -94,7 +97,10 @@ class SparkplugClient:
         self._callbacks.append(callback)
 
     def _on_paho_message(
-        self: Self, _client: object, _userdata: object, msg: _MQTTMessage
+        self: Self,
+        _client: object,
+        _userdata: object,
+        msg: _MQTTMessage,
     ) -> None:
         try:
             try:
@@ -142,7 +148,7 @@ class SparkplugClient:
             else:
                 log.error("sparkplug_connect_failed", rc=rc)
 
-        self._client.on_connect = on_connect  # type: ignore[assignment]
+        self._client.on_connect = on_connect
         self._client.connect(self._host, self._port, keepalive=60)
         self._client.loop_start()
 

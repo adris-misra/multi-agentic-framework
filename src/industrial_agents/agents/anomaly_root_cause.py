@@ -1,4 +1,4 @@
-"""Anomaly & Root-Cause Agent â€” multivariate anomaly detection + FMEA traversal."""
+"""Anomaly & Root-Cause Agent — multivariate anomaly detection + FMEA traversal."""
 
 from __future__ import annotations
 

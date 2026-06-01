@@ -1,4 +1,4 @@
-"""Safety / Guardrail Agent â€” OPA policy engine, reversibility classifier, CMMC L2 gate."""
+"""Safety / Guardrail Agent — OPA policy engine, reversibility classifier, CMMC L2 gate."""
 
 from __future__ import annotations
 
@@ -38,10 +38,10 @@ Return a JSON object with:
 - recommendations: list of strings
 
 Apply these hard rules:
-1. Any action on Purdue zone 0 or 1 assets requires explicit human approval â†’ allowed: false
-2. Any irreversible action on production equipment â†’ allowed: false unless confidence > 0.95
-3. Writing to CMMS/MES without proper authorization â†’ cmmc_compliant: false
-4. E-stop or emergency actions â†’ safe: evaluate carefully, may be REQUIRED for safety
+1. Any action on Purdue zone 0 or 1 assets requires explicit human approval -> allowed: false
+2. Any irreversible action on production equipment -> allowed: false unless confidence > 0.95
+3. Writing to CMMS/MES without proper authorization -> cmmc_compliant: false
+4. E-stop or emergency actions -> safe: evaluate carefully, may be REQUIRED for safety
 """
 
 
@@ -139,7 +139,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
                 "reversibility": "irreversible",
                 "cmmc_compliant": False,
                 "risk_level": "high",
-                "blocking_reasons": ["LLM parse error â€” defaulting to deny"],
+                "blocking_reasons": ["LLM parse error — defaulting to deny"],
                 "recommendations": ["Manual review required"],
             }
 
