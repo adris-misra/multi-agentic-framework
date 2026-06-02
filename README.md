@@ -7,6 +7,8 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org)
 [![CMMC L2 Aligned](https://img.shields.io/badge/CMMC-L2%20Aligned-green)](docs/governance/cmmc_l2_mapping.md)
 
+> 📊 See [`IMPACT.md`](./IMPACT.md) for adoption signals, citations, and the engagement roadmap.
+
 ---
 
 ## Why This Exists
