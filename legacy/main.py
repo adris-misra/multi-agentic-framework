@@ -1,15 +1,20 @@
 # multi_agent_framework/main.py
 
 # Agent imports: Each agent handles a specific stage of the pipeline
-from src.agents.requirement_agent import RequirementAgent  # Parses raw input into structured requirements
-from src.agents.coding_agent import CodingAgent            # Generates code from structured requirements
-from src.agents.code_review_agent import CodeReviewAgent   # Reviews code and provides approval or feedback
+from src.agents.requirement_agent import (
+    RequirementAgent,
+)  # Parses raw input into structured requirements
+from src.agents.coding_agent import CodingAgent  # Generates code from structured requirements
+from src.agents.code_review_agent import (
+    CodeReviewAgent,
+)  # Reviews code and provides approval or feedback
 from src.agents.documentation_agent import DocumentationAgent  # Documents the code clearly
-from src.agents.test_agent import TestAgent                # Generates test cases using pytest
-from src.agents.deployment_agent import DeploymentAgent    # Prepares deployment script
-from src.agents.ui_agent import UIAgent                    # Creates a Streamlit-based UI stub
+from src.agents.test_agent import TestAgent  # Generates test cases using pytest
+from src.agents.deployment_agent import DeploymentAgent  # Prepares deployment script
+from src.agents.ui_agent import UIAgent  # Creates a Streamlit-based UI stub
 
 MAX_REVIEW_ITERATIONS = 5
+
 
 def main():
     # Initialize agents
@@ -58,6 +63,7 @@ def main():
     print("\n=== Test Cases ===\n", test_cases)
     print("\n=== Deployment Script ===\n", deploy_script)
     print("\n=== Streamlit UI Code ===\n", ui_code)
+
 
 if __name__ == "__main__":
     main()

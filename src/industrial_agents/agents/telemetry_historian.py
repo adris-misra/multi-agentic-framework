@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Self
 
 import structlog
 
@@ -16,6 +16,9 @@ from industrial_agents.agents.base import (
     ContextBrokerProtocol,
     GovernanceProtocol,
 )
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
 
 log = structlog.get_logger(__name__)
 
@@ -59,15 +62,15 @@ class TelemetryHistorianAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
     ) -> None:
         super().__init__(name, llm, context_broker, governance)
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         import json
 
         log.info(

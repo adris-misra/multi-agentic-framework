@@ -47,7 +47,7 @@ def run(
 
 @app.command()
 def chat(
-    provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider."),
+    _provider: str = typer.Option("anthropic", "--provider", "-p", help="LLM provider."),
 ) -> None:
     """Start an interactive chat session with the operator copilot."""
     typer.echo("chat subcommand — implemented in Phase 3.")
@@ -113,8 +113,8 @@ def seed_synthetic(
 
 @app.command(name="governance-export")
 def governance_export(
-    since: str = typer.Option(..., "--since", help="ISO 8601 start timestamp."),
-    fmt: str = typer.Option("json", "--format", help="Output format: json or csv."),
+    _since: str = typer.Option(..., "--since", help="ISO 8601 start timestamp."),
+    _fmt: str = typer.Option("json", "--format", help="Output format: json or csv."),
 ) -> None:
     """Export signed governance decisions since a given timestamp."""
     typer.echo("⚙  governance-export subcommand — implemented in Phase 5.")

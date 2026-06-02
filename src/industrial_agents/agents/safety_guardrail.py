@@ -1,11 +1,11 @@
-"""Safety / Guardrail Agent â€” OPA policy engine, reversibility classifier, CMMC L2 gate."""
+"""Safety / Guardrail Agent — OPA policy engine, reversibility classifier, CMMC L2 gate."""
 
 from __future__ import annotations
 
 import datetime
 import hashlib
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 import structlog
 
@@ -18,6 +18,10 @@ from industrial_agents.agents.base import (
     ContextBrokerProtocol,
     GovernanceProtocol,
 )
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
+    from industrial_agents.governance.opa_client import OPAClient
 
 log = structlog.get_logger(__name__)
 
@@ -34,10 +38,10 @@ Return a JSON object with:
 - recommendations: list of strings
 
 Apply these hard rules:
-1. Any action on Purdue zone 0 or 1 assets requires explicit human approval â†’ allowed: false
-2. Any irreversible action on production equipment â†’ allowed: false unless confidence > 0.95
-3. Writing to CMMS/MES without proper authorization â†’ cmmc_compliant: false
-4. E-stop or emergency actions â†’ safe: evaluate carefully, may be REQUIRED for safety
+1. Any action on Purdue zone 0 or 1 assets requires explicit human approval -> allowed: false
+2. Any irreversible action on production equipment -> allowed: false unless confidence > 0.95
+3. Writing to CMMS/MES without proper authorization -> cmmc_compliant: false
+4. E-stop or emergency actions -> safe: evaluate carefully, may be REQUIRED for safety
 """
 
 
@@ -65,17 +69,17 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
-        opa_client: Any = None,
+        opa_client: OPAClient | None = None,
     ) -> None:
         super().__init__(name, llm, context_broker, governance)
         self._opa = opa_client
 
-    async def _check_opa(self, action: str, context: dict[str, Any]) -> bool | None:
+    async def _check_opa(self: Self, action: str, context: dict[str, Any]) -> bool | None:
         if self._opa is None:
             return None
         try:
@@ -88,7 +92,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
             log.warning("opa_check_failed", error=str(exc))
             return None
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         action = message.payload.get("action", message.intent)
         target_zone = int(message.payload.get("target_zone", 3))
         context = message.payload.get("context", {})
@@ -135,7 +139,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
                 "reversibility": "irreversible",
                 "cmmc_compliant": False,
                 "risk_level": "high",
-                "blocking_reasons": ["LLM parse error â€” defaulting to deny"],
+                "blocking_reasons": ["LLM parse error — defaulting to deny"],
                 "recommendations": ["Manual review required"],
             }
 
@@ -161,9 +165,7 @@ class SafetyGuardrailAgent(BaseIndustrialAgent):
             reversibility="reversible",
             trace_id=message.trace_id,
             inputs_hash=inputs_hash,
-            timestamp_utc=datetime.datetime.now(datetime.UTC)
-            .replace(tzinfo=None)
-            .isoformat()
+            timestamp_utc=datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
             + "Z",
         )
         await self.emit_decision(decision)

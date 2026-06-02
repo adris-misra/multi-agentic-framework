@@ -1,11 +1,11 @@
-"""Anomaly & Root-Cause Agent â€” multivariate anomaly detection + FMEA traversal."""
+"""Anomaly & Root-Cause Agent — multivariate anomaly detection + FMEA traversal."""
 
 from __future__ import annotations
 
 import datetime
 import hashlib
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Self
 
 import structlog
 
@@ -18,6 +18,9 @@ from industrial_agents.agents.base import (
     ContextBrokerProtocol,
     GovernanceProtocol,
 )
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
 
 log = structlog.get_logger(__name__)
 
@@ -60,15 +63,15 @@ class AnomalyRootCauseAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
     ) -> None:
         super().__init__(name, llm, context_broker, governance)
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         log.info(
             "anomaly_handle",
             intent=message.intent,
@@ -126,9 +129,7 @@ class AnomalyRootCauseAgent(BaseIndustrialAgent):
                 reversibility="reversible",
                 trace_id=message.trace_id,
                 inputs_hash=inputs_hash,
-                timestamp_utc=datetime.datetime.now(datetime.UTC)
-                .replace(tzinfo=None)
-                .isoformat()
+                timestamp_utc=datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
                 + "Z",
             )
             await self.emit_decision(decision)

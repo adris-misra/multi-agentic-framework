@@ -1,9 +1,9 @@
-"""HITL Supervisor Agent â€” confidence-threshold human routing via Slack/Teams/email."""
+"""HITL Supervisor Agent — confidence-threshold human routing via Slack/Teams/email."""
 
 from __future__ import annotations
 
 import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 import structlog
 
@@ -16,6 +16,9 @@ from industrial_agents.agents.base import (
     ContextBrokerProtocol,
     GovernanceProtocol,
 )
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
 
 log = structlog.get_logger(__name__)
 
@@ -38,9 +41,9 @@ class HITLSupervisorAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
         confidence_threshold: float = 0.85,
@@ -55,10 +58,10 @@ class HITLSupervisorAgent(BaseIndustrialAgent):
         self._email_to = email_to
         self._pending: list[dict[str, Any]] = []
 
-    def _needs_hitl(self, message: AgentMessage) -> bool:
+    def _needs_hitl(self: Self, message: AgentMessage) -> bool:
         return message.confidence < self._threshold
 
-    async def _notify_slack(self, text: str) -> bool:
+    async def _notify_slack(self: Self, text: str) -> bool:
         if self._slack_webhook is None:
             return False
         try:
@@ -75,7 +78,7 @@ class HITLSupervisorAgent(BaseIndustrialAgent):
             log.warning("slack_notify_failed", error=str(exc))
             return False
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         log.info(
             "hitl_supervisor_handle",
             confidence=message.confidence,
@@ -101,9 +104,7 @@ class HITLSupervisorAgent(BaseIndustrialAgent):
             "intent": message.intent,
             "confidence": message.confidence,
             "payload": message.payload,
-            "created_utc": datetime.datetime.now(datetime.UTC)
-            .replace(tzinfo=None)
-            .isoformat()
+            "created_utc": datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
             + "Z",
             "status": "pending",
         }

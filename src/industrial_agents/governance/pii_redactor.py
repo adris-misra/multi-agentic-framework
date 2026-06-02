@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Self
 
 import structlog
 
@@ -55,8 +55,8 @@ def redact_dict(data: dict[str, Any], depth: int = 0) -> dict[str, Any]:
 
 
 class PIIRedactor:
-    def redact(self, text: str) -> str:
+    def redact(self: Self, text: str) -> str:
         return redact_string(text)
 
-    def redact_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def redact_payload(self: Self, payload: dict[str, Any]) -> dict[str, Any]:
         return redact_dict(payload)

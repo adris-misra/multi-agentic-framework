@@ -3,11 +3,13 @@
 import openai
 from src.agents.base_agent import BaseAgent
 
+
 class UIAgent(BaseAgent):
     """
     Agent that generates a basic Streamlit UI for interacting with the multi-agent system.
     The UI allows users to input natural language requirements and displays system outputs.
     """
+
     def __init__(self, name):
         super().__init__(name=name)
 
@@ -44,8 +46,8 @@ class UIAgent(BaseAgent):
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a Streamlit UI developer."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.3
+            temperature=0.3,
         )
         return response.choices[0].message.content.strip()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Self
 
 import structlog
 
@@ -14,14 +14,14 @@ _DEFAULT_HOST = "http://localhost:11434"
 
 
 class OllamaProvider:
-    def __init__(self, host: str | None = None) -> None:
+    def __init__(self: Self, host: str | None = None) -> None:
         import ollama
 
         self._host = host or os.getenv("OLLAMA_HOST", _DEFAULT_HOST)
         self._client = ollama.AsyncClient(host=self._host)
 
     async def complete(
-        self,
+        self: Self,
         messages: list[dict[str, str]],
         *,
         model: str | None = None,

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Self
 
 import structlog
 from pydantic import BaseModel
@@ -17,6 +17,9 @@ from industrial_agents.agents.base import (
     ContextBrokerProtocol,
     GovernanceProtocol,
 )
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
 
 log = structlog.get_logger(__name__)
 
@@ -64,9 +67,9 @@ class UNSContextBrokerAgent(BaseIndustrialAgent):
     ]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
         write_gate_zone_threshold: int = 2,
@@ -74,7 +77,7 @@ class UNSContextBrokerAgent(BaseIndustrialAgent):
         super().__init__(name, llm, context_broker, governance)
         self._write_gate_threshold = write_gate_zone_threshold
 
-    def resolve_path(self, path: str) -> UNSResolution:
+    def resolve_path(self: Self, path: str) -> UNSResolution:
         spk_match = _SPARKPLUG_PATTERN.match(path)
         if spk_match:
             return UNSResolution(
@@ -95,7 +98,7 @@ class UNSContextBrokerAgent(BaseIndustrialAgent):
 
         return UNSResolution(path=path, resolved=False, purdue_zone=5, sparkplug=False)
 
-    def validate_zone(self, agent_zone: int, target_zone: int) -> bool:
+    def validate_zone(self: Self, agent_zone: int, target_zone: int) -> bool:
         if target_zone <= self._write_gate_threshold:
             log.warning(
                 "uns_zone_violation",
@@ -106,7 +109,7 @@ class UNSContextBrokerAgent(BaseIndustrialAgent):
             return False
         return True
 
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision:
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision:
         path = message.payload.get("path", "")
         action = message.payload.get("action", "read")
         agent_zone = int(message.payload.get("agent_zone", 3))

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Self
 
 import structlog
 
@@ -49,10 +50,10 @@ class ZoneViolation:
 
 
 class PurdueZoneEnforcer:
-    def __init__(self, write_gate_threshold: int = 2) -> None:
+    def __init__(self: Self, write_gate_threshold: int = 2) -> None:
         self._write_gate = write_gate_threshold
 
-    def check_read(self, from_zone: int, to_zone: int) -> ZoneViolation | None:
+    def check_read(self: Self, from_zone: int, to_zone: int) -> ZoneViolation | None:
         allowed = _READ_ALLOWED.get(from_zone, set())
         if to_zone not in allowed:
             v = ZoneViolation(
@@ -68,7 +69,7 @@ class PurdueZoneEnforcer:
             return v
         return None
 
-    def check_write(self, from_zone: int, to_zone: int) -> ZoneViolation | None:
+    def check_write(self: Self, from_zone: int, to_zone: int) -> ZoneViolation | None:
         if to_zone <= self._write_gate:
             v = ZoneViolation(
                 from_zone=from_zone,
@@ -97,5 +98,5 @@ class PurdueZoneEnforcer:
             return v
         return None
 
-    def zone_name(self, zone: int) -> str:
+    def zone_name(self: Self, zone: int) -> str:
         return ZONE_NAMES.get(zone, f"Unknown Zone {zone}")

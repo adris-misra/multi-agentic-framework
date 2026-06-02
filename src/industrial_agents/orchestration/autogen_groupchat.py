@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Self
 
 import structlog
 
@@ -34,7 +35,7 @@ class IndustrialGroupChat:
     """
 
     def __init__(
-        self,
+        self: Self,
         agents: list[BaseIndustrialAgent],
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
@@ -53,11 +54,11 @@ class IndustrialGroupChat:
         self._escalation = escalation_router or EscalationRouter()
         self._max_rounds = max_rounds
 
-    def _resolve_agent(self, role: AgentRole) -> BaseIndustrialAgent | None:
+    def _resolve_agent(self: Self, role: AgentRole) -> BaseIndustrialAgent | None:
         return self._agents.get(role)
 
     async def run(
-        self,
+        self: Self,
         initial_message: AgentMessage,
     ) -> list[AgentMessage | AgentDecision]:
         trace_id = initial_message.trace_id or str(uuid.uuid4())

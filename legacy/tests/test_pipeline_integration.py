@@ -7,7 +7,7 @@ def test_pipeline_output_format():
         "goal": "Add two numbers",
         "features": ["addition"],
         "inputs": ["num1", "num2"],
-        "outputs": ["sum"]
+        "outputs": ["sum"],
     }
 
     mock_response = MagicMock()

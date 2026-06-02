@@ -6,9 +6,12 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, Self, runtime_checkable
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from industrial_agents.agents._llm import LLMProvider
 
 
 class AgentRole(StrEnum):
@@ -42,7 +45,7 @@ class AgentMessage(BaseModel):
     trace_id: str
     correlation_id: str | None = None
 
-    def inputs_hash(self) -> str:
+    def inputs_hash(self: Self) -> str:
         canonical = json.dumps(
             {"sender": self.sender, "intent": self.intent, "payload": self.payload},
             sort_keys=True,
@@ -65,20 +68,20 @@ class AgentDecision(BaseModel):
 
 @runtime_checkable
 class ContextBrokerProtocol(Protocol):
-    async def resolve_path(self, path: str) -> dict[str, Any]: ...
+    async def resolve_path(self: Self, path: str) -> dict[str, Any]: ...
 
-    async def validate_zone(self, agent_zone: int, target_zone: int) -> bool: ...
+    async def validate_zone(self: Self, agent_zone: int, target_zone: int) -> bool: ...
 
-    async def publish(self, topic: str, payload: dict[str, Any]) -> None: ...
+    async def publish(self: Self, topic: str, payload: dict[str, Any]) -> None: ...
 
 
 @runtime_checkable
 class GovernanceProtocol(Protocol):
-    async def emit_lineage(self, decision: AgentDecision) -> None: ...
+    async def emit_lineage(self: Self, decision: AgentDecision) -> None: ...
 
-    async def sign_decision(self, decision: AgentDecision) -> str: ...
+    async def sign_decision(self: Self, decision: AgentDecision) -> str: ...
 
-    async def check_policy(self, action: str, context: dict[str, Any]) -> bool: ...
+    async def check_policy(self: Self, action: str, context: dict[str, Any]) -> bool: ...
 
 
 class BaseIndustrialAgent(ABC):
@@ -87,9 +90,9 @@ class BaseIndustrialAgent(ABC):
     capabilities: list[AgentCapability]
 
     def __init__(
-        self,
+        self: Self,
         name: str,
-        llm: Any,
+        llm: LLMProvider,
         context_broker: ContextBrokerProtocol,
         governance: GovernanceProtocol,
     ) -> None:
@@ -99,8 +102,8 @@ class BaseIndustrialAgent(ABC):
         self._governance = governance
 
     @abstractmethod
-    async def handle(self, message: AgentMessage) -> AgentMessage | AgentDecision: ...
+    async def handle(self: Self, message: AgentMessage) -> AgentMessage | AgentDecision: ...
 
-    async def emit_decision(self, decision: AgentDecision) -> None:
+    async def emit_decision(self: Self, decision: AgentDecision) -> None:
         decision.signature = await self._governance.sign_decision(decision)
         await self._governance.emit_lineage(decision)

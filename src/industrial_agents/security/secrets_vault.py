@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Self
+from urllib.parse import urlsplit
 
 import structlog
 
@@ -19,11 +21,11 @@ class SecretsVault:
     Never logs secret values; logs key names only.
     """
 
-    def __init__(self, vault_url: str | None = None, vault_token: str | None = None) -> None:
+    def __init__(self: Self, vault_url: str | None = None, vault_token: str | None = None) -> None:
         self._vault_url = vault_url or os.getenv("VAULT_ADDR")
         self._vault_token = vault_token or os.getenv("VAULT_TOKEN")
 
-    def get(self, key: str, default: str | None = None) -> str | None:
+    def get(self: Self, key: str, default: str | None = None) -> str | None:
         # 1. Environment variable
         value = os.getenv(key)
         if value:
@@ -47,7 +49,7 @@ class SecretsVault:
         log.debug("secret_not_found", key=key)
         return default
 
-    def require(self, key: str) -> str:
+    def require(self: Self, key: str) -> str:
         value = self.get(key)
         if value is None:
             raise RuntimeError(
@@ -56,18 +58,23 @@ class SecretsVault:
             )
         return value
 
-    def _from_vault(self, key: str) -> str | None:
+    def _from_vault(self: Self, key: str) -> str | None:
         try:
             import json
             import urllib.request
 
             path = key.lower().replace("_", "/")
             url = f"{self._vault_url}/v1/secret/data/industrial-agents/{path}"
-            req = urllib.request.Request(
+
+            parsed = urlsplit(url)
+            if parsed.scheme not in ("http", "https"):
+                raise ValueError(f"Vault URL must use http or https scheme, got: {parsed.scheme!r}")
+
+            req = urllib.request.Request(  # noqa: S310  # nosec B310 — scheme validated above
                 url,
                 headers={"X-Vault-Token": self._vault_token or ""},
             )
-            with urllib.request.urlopen(req, timeout=3) as resp:  # noqa: S310
+            with urllib.request.urlopen(req, timeout=3) as resp:  # noqa: S310  # nosec B310 — scheme validated above
                 data = json.loads(resp.read())
                 value = data.get("data", {}).get("data", {}).get("value")
                 if value:

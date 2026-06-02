@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import opentelemetry.trace as _otel_trace
 
 
 def configure_tracing(
@@ -37,7 +40,7 @@ def configure_tracing(
         )
 
 
-def get_tracer(name: str = "industrial-agents") -> Any:
+def get_tracer(name: str = "industrial-agents") -> _otel_trace.Tracer:
     from opentelemetry import trace
 
     return trace.get_tracer(name)

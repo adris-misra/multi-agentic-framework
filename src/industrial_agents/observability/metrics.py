@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Self
+
+if TYPE_CHECKING:
+    from prometheus_client import Counter, Histogram
 
 
 class IndustrialMetrics:
@@ -14,22 +17,22 @@ class IndustrialMetrics:
 
     _instance: IndustrialMetrics | None = None
 
-    def __init__(self) -> None:
+    def __init__(self: Self) -> None:
         self._initialized = False
-        self._agent_requests: Any = None
-        self._agent_errors: Any = None
-        self._decision_latency: Any = None
-        self._hitl_escalations: Any = None
-        self._anomalies_detected: Any = None
+        self._agent_requests: Counter | None = None
+        self._agent_errors: Counter | None = None
+        self._decision_latency: Histogram | None = None
+        self._hitl_escalations: Counter | None = None
+        self._anomalies_detected: Counter | None = None
 
     @classmethod
-    def get(cls) -> IndustrialMetrics:
+    def get(cls: type[Self]) -> IndustrialMetrics:
         if cls._instance is None:
             cls._instance = cls()
             cls._instance._init()
         return cls._instance
 
-    def _init(self) -> None:
+    def _init(self: Self) -> None:
         try:
             from prometheus_client import Counter, Histogram
 
@@ -63,22 +66,22 @@ class IndustrialMetrics:
         except ImportError:
             pass
 
-    def inc_requests(self, agent: str, intent: str) -> None:
+    def inc_requests(self: Self, agent: str, intent: str) -> None:
         if self._initialized and self._agent_requests is not None:
             self._agent_requests.labels(agent=agent, intent=intent).inc()
 
-    def inc_errors(self, agent: str, error_type: str) -> None:
+    def inc_errors(self: Self, agent: str, error_type: str) -> None:
         if self._initialized and self._agent_errors is not None:
             self._agent_errors.labels(agent=agent, error_type=error_type).inc()
 
-    def observe_latency(self, agent: str, reversibility: str, seconds: float) -> None:
+    def observe_latency(self: Self, agent: str, reversibility: str, seconds: float) -> None:
         if self._initialized and self._decision_latency is not None:
             self._decision_latency.labels(agent=agent, reversibility=reversibility).observe(seconds)
 
-    def inc_hitl(self, reason: str) -> None:
+    def inc_hitl(self: Self, reason: str) -> None:
         if self._initialized and self._hitl_escalations is not None:
             self._hitl_escalations.labels(reason=reason).inc()
 
-    def inc_anomaly(self, severity: str) -> None:
+    def inc_anomaly(self: Self, severity: str) -> None:
         if self._initialized and self._anomalies_detected is not None:
             self._anomalies_detected.labels(severity=severity).inc()

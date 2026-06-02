@@ -3,11 +3,13 @@
 import openai
 from src.agents.base_agent import BaseAgent
 
+
 class CodeReviewAgent(BaseAgent):
     """
     Agent that reviews Python code for correctness, efficiency, security, and readability.
     Returns either 'Approved' or a list of feedback points.
     """
+
     def __init__(self, name):
         super().__init__(name=name)
 
@@ -41,8 +43,8 @@ class CodeReviewAgent(BaseAgent):
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a code review expert."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.2
+            temperature=0.2,
         )
         return response.choices[0].message.content.strip()

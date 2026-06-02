@@ -12,7 +12,7 @@ import datetime
 import json
 import random
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import structlog
 
@@ -53,7 +53,7 @@ class AnomalyProfile:
     __slots__ = ("asset_id", "signal", "start_ts", "duration_minutes", "magnitude", "anomaly_type")
 
     def __init__(
-        self,
+        self: Self,
         asset_id: str,
         signal: str,
         start_ts: datetime.datetime,
@@ -71,7 +71,7 @@ class AnomalyProfile:
 
 class UNSDataGenerator:
     def __init__(
-        self,
+        self: Self,
         seed: int = 42,
         enterprise: str = "acme",
         site: str = "chicago",
@@ -80,20 +80,20 @@ class UNSDataGenerator:
         self._enterprise = enterprise
         self._site = site
 
-    def _uns_path(self, asset: dict[str, Any], signal: str) -> str:
+    def _uns_path(self: Self, asset: dict[str, Any], signal: str) -> str:
         return (
             f"{self._enterprise}/{self._site}/{asset['line']}/{asset['cell']}/"
             f"{asset['id']}/{signal}"
         )
 
-    def _sparkplug_topic(self, asset: dict[str, Any], _signal: str) -> str:
+    def _sparkplug_topic(self: Self, asset: dict[str, Any], _signal: str) -> str:
         return f"spBv1.0/{self._enterprise}/NDATA/{asset['line']}/{asset['id']}"
 
-    def _normal(self, baseline: float, sigma: float) -> float:
+    def _normal(self: Self, baseline: float, sigma: float) -> float:
         return self._rng.gauss(baseline, sigma)
 
     def _generate_signal_series(
-        self,
+        self: Self,
         asset: dict[str, Any],
         signal: str,
         config: dict[str, Any],
@@ -130,7 +130,7 @@ class UNSDataGenerator:
         return rows
 
     def generate(
-        self,
+        self: Self,
         n_hours: int = 24,
         interval_seconds: int = 60,
         inject_anomalies: bool = True,
@@ -216,7 +216,7 @@ class UNSDataGenerator:
             },
         }
 
-    def save_jsonl(self, data: dict[str, Any], path: Path) -> None:
+    def save_jsonl(self: Self, data: dict[str, Any], path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             for row in data["rows"]:
@@ -226,7 +226,7 @@ class UNSDataGenerator:
             json.dump(data["metadata"], f, indent=2)
         log.info("synthetic_saved", path=str(path), meta=str(meta_path))
 
-    def save_parquet(self, data: dict[str, Any], path: Path) -> None:
+    def save_parquet(self: Self, data: dict[str, Any], path: Path) -> None:
         try:
             import pandas as pd
 

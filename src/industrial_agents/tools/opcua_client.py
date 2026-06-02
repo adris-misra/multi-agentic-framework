@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 import structlog
+
+if TYPE_CHECKING:
+    from asyncua import Client as _AsyncUAClient
 
 log = structlog.get_logger(__name__)
 
@@ -16,9 +19,9 @@ class OPCUAReading:
     __slots__ = ("node_id", "value", "quality", "source_timestamp", "server_timestamp")
 
     def __init__(
-        self,
+        self: Self,
         node_id: str,
-        value: Any,
+        value: object,
         quality: str,
         source_timestamp: str,
         server_timestamp: str,
@@ -29,7 +32,7 @@ class OPCUAReading:
         self.source_timestamp = source_timestamp
         self.server_timestamp = server_timestamp
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self: Self) -> dict[str, Any]:
         return {
             "node_id": self.node_id,
             "value": self.value,
@@ -48,7 +51,7 @@ class OPCUAClient:
     """
 
     def __init__(
-        self,
+        self: Self,
         endpoint: str | None = None,
         username: str | None = None,
         password: str | None = None,
@@ -58,9 +61,9 @@ class OPCUAClient:
         self._username = username
         self._password = password
         self._purdue_zone = purdue_zone
-        self._client: Any = None
+        self._client: _AsyncUAClient | None = None
 
-    async def connect(self) -> None:
+    async def connect(self: Self) -> None:
         try:
             from asyncua import Client
 
@@ -74,7 +77,7 @@ class OPCUAClient:
             log.error("opcua_connect_failed", endpoint=self._endpoint, error=str(exc))
             raise
 
-    async def disconnect(self) -> None:
+    async def disconnect(self: Self) -> None:
         if self._client is not None:
             try:
                 await self._client.disconnect()
@@ -84,7 +87,7 @@ class OPCUAClient:
             finally:
                 self._client = None
 
-    async def read_node(self, node_id: str) -> OPCUAReading:
+    async def read_node(self: Self, node_id: str) -> OPCUAReading:
         if self._client is None:
             raise RuntimeError("OPCUAClient not connected; call connect() first")
 
@@ -107,22 +110,22 @@ class OPCUAClient:
             log.error("opcua_read_failed", node_id=node_id, error=str(exc))
             raise
 
-    async def read_nodes(self, node_ids: list[str]) -> list[OPCUAReading]:
+    async def read_nodes(self: Self, node_ids: list[str]) -> list[OPCUAReading]:
         results = []
         for nid in node_ids:
             reading = await self.read_node(nid)
             results.append(reading)
         return results
 
-    def write_node(self, *args: Any, **kwargs: Any) -> None:
+    def write_node(self: Self, *_args: object, **_kwargs: object) -> None:
         raise PermissionError(
             "OPCUAClient is read-only. Write operations must go through the "
             "SafetyGuardrailAgent and WorkOrderMESAgent with HITL approval."
         )
 
-    async def __aenter__(self) -> OPCUAClient:
+    async def __aenter__(self: Self) -> OPCUAClient:
         await self.connect()
         return self
 
-    async def __aexit__(self, *_args: object) -> None:
+    async def __aexit__(self: Self, *_args: object) -> None:
         await self.disconnect()

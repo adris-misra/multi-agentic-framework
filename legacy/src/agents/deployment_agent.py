@@ -3,11 +3,13 @@
 import openai
 from src.agents.base_agent import BaseAgent
 
+
 class DeploymentAgent(BaseAgent):
     """
     Agent that generates a simple deployment script for a Python application.
     Includes setting up a virtual environment, installing dependencies, and running the app.
     """
+
     def __init__(self, name):
         super().__init__(name=name)
 
@@ -41,8 +43,8 @@ class DeploymentAgent(BaseAgent):
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a DevOps deployment assistant."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.2
+            temperature=0.2,
         )
         return response.choices[0].message.content.strip()
