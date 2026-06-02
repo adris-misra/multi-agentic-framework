@@ -85,6 +85,10 @@ dev = [
   "types-boto3",
   "pandas-stubs",
 ]
+docs = [
+  "mkdocs-material>=9.5",
+  "pymdown-extensions>=10.0",
+]
 snowflake = [
   "snowflake-connector-python>=3.10",
 ]
