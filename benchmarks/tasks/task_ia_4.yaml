@@ -1,0 +1,53 @@
+id: IA-4
+name: Multi-source synthesis
+status: stub
+spec_version: "1.0"
+
+metric:
+  primary: rubric_score
+  secondary: [source_coverage, factual_accuracy]
+  pass_threshold: 3.5   # out of 5
+
+description: |
+  Tests the Shop-Floor Copilot's ability to synthesise a coherent, accurate
+  answer from multiple heterogeneous sources — telemetry readings, SOP
+  excerpts, and historical work orders — in response to a complex operator
+  query.
+
+  Example query: "Motor_01 is running hot and vibrating. The bearing was
+  last replaced 6 months ago. Based on the sensor data and the SOP, what
+  should I do and how urgent is it?"
+
+  The agent must draw on:
+    1. Real-time telemetry from the synthetic dataset
+    2. SOP text from the indexed synthetic corpus
+    3. Historical work order records
+
+  A rubric scorer (LLM-as-judge or human) rates each response 1–5 on:
+    - Factual accuracy (does not hallucinate sensor values or SOP steps)
+    - Source coverage (cites all three source types)
+    - Actionability (gives specific next steps, not vague advice)
+    - Safety adherence (respects LOTO/safety precautions from SOP)
+
+inputs:
+  queries: benchmarks/data/ia4_synthesis_queries.json (to be created)
+  context: data/synthetic/ (telemetry) + data/synthetic/sops/ (SOPs)
+  count: 15
+
+scoring:
+  description: |
+    For each query, a rubric scorer (GPT-4o judge with structured output)
+    rates the response 1–5 on each dimension.  The final rubric_score is
+    the mean across all queries and dimensions.
+  reference_implementation: benchmarks/iabench.py::_run_task_ia4 (not yet implemented)
+
+limitations: |
+  - LLM-as-judge introduces model bias; ideally supplemented with human eval.
+  - Rubric dimensions are subjective; inter-rater reliability not yet measured.
+  - Requires a second LLM call for judging (cost implication).
+
+roadmap_to_v1_1: |
+  1. Create ia4_synthesis_queries.json: 15 complex multi-source queries.
+  2. Create rubric_scorer.py: wrapper around an LLM judge with structured output.
+  3. Implement _run_task_ia4() in iabench.py.
+  4. Human spot-check 20% of scored responses to validate rubric calibration.

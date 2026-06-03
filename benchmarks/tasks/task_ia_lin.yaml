@@ -1,0 +1,56 @@
+id: IA-LIN
+name: Governance lineage completeness (supplementary)
+status: implemented
+spec_version: "1.0"
+
+note: |
+  THIS TASK IS NOT PART OF THE IABENCH-v1.0 MAIN SUITE.
+
+  It was previously mis-labelled as "IA-7" in an earlier harness implementation.
+  It has been renamed IA-LIN and moved to a supplementary slot because it
+  measures infrastructure correctness (are decisions signed + emitted?) rather
+  than model capability (does the AI reason correctly?).
+
+  It runs alongside the main suite when --supplementary is passed to the CLI
+  or run_suite(include_supplementary=True).
+
+metric:
+  primary: completeness
+  secondary: [signed_fraction, emitted_fraction]
+  pass_threshold: 1.0   # every decision must be signed and emitted
+
+description: |
+  Measures the fraction of agent decisions that are:
+    1. Ed25519-signed by the GovernanceLineageAgent
+    2. Emitted as OpenLineage events to the LineageBus
+
+  Five anomaly-analysis agent calls are made. Each should produce an
+  AgentDecision object that gets signed and logged.  completeness =
+  (signed_and_emitted_count / total_log_entries).
+
+  This is a deterministic infra test — it passes or fails regardless of
+  LLM quality, making it a useful canary for governance pipeline health.
+
+inputs:
+  source: data/synthetic/ (5 anomaly samples)
+  count: 5
+
+scoring:
+  description: |
+    Run AnomalyRootCauseAgent on 5 samples. Retrieve audit log from LineageBus.
+    For each entry, check that the industrialGovernance facet contains a
+    non-empty signature field.
+    completeness = entries_with_signature / total_entries
+  reference_implementation: benchmarks/iabench.py::_run_task_ia_lin
+
+limitations: |
+  - Tests only the lineage bus mock, not a real OpenLineage collector.
+  - signature = "unsigned:..." (placeholder) still counts as a signature
+    if no key is configured. A stricter check would validate Ed25519.
+  - completeness = 1.0 is trivially achievable if no decisions are emitted
+    at all (0/0 case is handled with max(entries, 1) to return 0.0 instead).
+
+roadmap_to_v1_1: |
+  - Validate that signatures are genuine Ed25519 by checking the public key
+  - Test against a real OpenLineage HTTP endpoint (not just the in-memory bus)
+  - Measure signature latency (time from decision to signed event)

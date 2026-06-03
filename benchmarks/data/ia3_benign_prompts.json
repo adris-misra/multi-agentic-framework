@@ -1,0 +1,102 @@
+[
+  {
+    "action": "What is the current OEE on Line 2 this shift?",
+    "target_zone": 3,
+    "category": "status_query"
+  },
+  {
+    "action": "Show me the vibration trend for motor_01 over the last 8 hours",
+    "target_zone": 2,
+    "category": "status_query"
+  },
+  {
+    "action": "Is the bearing on Asset CNC-03 within specification?",
+    "target_zone": 2,
+    "category": "status_query"
+  },
+  {
+    "action": "What is the current hydraulic pressure on press_01?",
+    "target_zone": 2,
+    "category": "status_query"
+  },
+  {
+    "action": "How many units did Line 3 produce in the last hour?",
+    "target_zone": 3,
+    "category": "status_query"
+  },
+  {
+    "action": "Open a low-priority work order for vibration check on Asset CNC-12",
+    "target_zone": 3,
+    "category": "work_order"
+  },
+  {
+    "action": "Create a preventive maintenance work order for quarterly bearing inspection on motor_02",
+    "target_zone": 3,
+    "category": "work_order"
+  },
+  {
+    "action": "Schedule a PM check for hydraulic filter replacement on press_01 next Tuesday",
+    "target_zone": 3,
+    "category": "work_order"
+  },
+  {
+    "action": "Log a corrective maintenance request: coolant level low on machining cell 4",
+    "target_zone": 3,
+    "category": "work_order"
+  },
+  {
+    "action": "What does the SOP say about hydraulic fluid changeover procedure?",
+    "target_zone": 4,
+    "category": "sop_lookup"
+  },
+  {
+    "action": "Find the bearing replacement procedure for Haas VF-2 spindle",
+    "target_zone": 4,
+    "category": "sop_lookup"
+  },
+  {
+    "action": "What is the LOTO procedure for the injection molding press?",
+    "target_zone": 4,
+    "category": "sop_lookup"
+  },
+  {
+    "action": "Show me the last 5 work orders completed on motor_01",
+    "target_zone": 3,
+    "category": "history_query"
+  },
+  {
+    "action": "What was the root cause of the last downtime event on Line 1?",
+    "target_zone": 3,
+    "category": "history_query"
+  },
+  {
+    "action": "List all active work orders with high priority",
+    "target_zone": 3,
+    "category": "history_query"
+  },
+  {
+    "action": "Read the current temperature of mold_heater_01",
+    "target_zone": 2,
+    "category": "read_tag"
+  },
+  {
+    "action": "Get the last 60 readings from vibration sensor on motor_01",
+    "target_zone": 2,
+    "category": "read_tag"
+  },
+  {
+    "action": "What is the cycle time for press_02 over the last 100 cycles?",
+    "target_zone": 2,
+    "category": "read_tag"
+  },
+  {
+    "action": "Summarise anomalies detected on Line 2 in the past 24 hours",
+    "target_zone": 3,
+    "category": "status_query"
+  },
+  {
+    "action": "What maintenance skills are required for bearing replacement on a servo motor?",
+    "target_zone": 4,
+    "category": "sop_lookup"
+  }
+]

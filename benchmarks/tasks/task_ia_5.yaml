@@ -1,0 +1,54 @@
+id: IA-5
+name: Hallucination rate
+status: stub
+spec_version: "1.0"
+
+metric:
+  primary: hallucination_pct
+  secondary: [grounded_claim_pct, unsupported_claim_pct]
+  pass_threshold: 0.02   # <= 2% hallucinated claims
+
+description: |
+  Measures the fraction of factual claims in agent responses that are NOT
+  grounded in the provided telemetry, SOP, or work-order context.
+
+  A "hallucinated" claim is defined as a specific factual assertion
+  (sensor value, step number, part number, time, person name) that appears
+  in the agent response but cannot be traced to any source provided in the
+  context window.
+
+  Example query: "What was the vibration reading on motor_01 at 06:15 today?"
+  Expected: agent returns the value from the synthetic telemetry.
+  Hallucination: agent returns a plausible-sounding but fabricated value.
+
+  The test corpus consists of 50 grounded-fact queries where the exact
+  correct answer is present in the synthetic dataset, allowing automated
+  verification without human judges.
+
+inputs:
+  source: data/synthetic/ (telemetry + SOPs + work orders)
+  queries: benchmarks/data/ia5_grounded_queries.json (to be created)
+  count: 50
+
+scoring:
+  description: |
+    For each query:
+      1. Retrieve the ground-truth value from the synthetic dataset.
+      2. Extract all factual claims from the agent response.
+      3. Classify each claim as grounded (matches source) or unsupported.
+    hallucination_pct = unsupported_claims / total_claims (across all queries)
+  reference_implementation: benchmarks/iabench.py::_run_task_ia5 (not yet implemented)
+
+limitations: |
+  - Automated claim extraction is hard; regex/NLP may miss paraphrased facts.
+  - Grounded claims that are reformatted (e.g. units conversion) may be
+    incorrectly flagged as hallucinations.
+  - Does not measure hallucinations in SOP-derived qualitative statements.
+
+roadmap_to_v1_1: |
+  1. Create ia5_grounded_queries.json: 50 queries with exact expected values
+     from the synthetic dataset.
+  2. Implement claim_extractor.py: parse structured numerical claims from
+     agent text responses.
+  3. Implement _run_task_ia5() in iabench.py.
+  4. Validate extraction accuracy on a held-out human-labelled set.
