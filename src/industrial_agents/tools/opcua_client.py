@@ -57,7 +57,10 @@ class OPCUAClient:
         password: str | None = None,
         purdue_zone: int = 2,
     ) -> None:
-        self._endpoint = endpoint or os.getenv("OPCUA_ENDPOINT", _DEFAULT_ENDPOINT)
+        self._endpoint: str = (
+            endpoint if endpoint is not None
+            else os.getenv("OPCUA_ENDPOINT", _DEFAULT_ENDPOINT)
+        )
         self._username = username
         self._password = password
         self._purdue_zone = purdue_zone
@@ -97,7 +100,7 @@ class OPCUAClient:
         try:
             node = self._client.get_node(node_id)
             dv = await node.read_data_value()
-            quality = "good" if dv.StatusCode.is_good() else "bad"
+            quality = "good" if dv.StatusCode is not None and dv.StatusCode.is_good() else "bad"
             ts = dv.SourceTimestamp or datetime.datetime.now(datetime.UTC)
             return OPCUAReading(
                 node_id=node_id,
