@@ -58,8 +58,7 @@ class OPCUAClient:
         purdue_zone: int = 2,
     ) -> None:
         self._endpoint: str = (
-            endpoint if endpoint is not None
-            else os.getenv("OPCUA_ENDPOINT", _DEFAULT_ENDPOINT)
+            endpoint if endpoint is not None else os.getenv("OPCUA_ENDPOINT", _DEFAULT_ENDPOINT)
         )
         self._username = username
         self._password = password
