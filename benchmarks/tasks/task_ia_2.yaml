@@ -1,0 +1,54 @@
+id: IA-2
+name: Tacit-knowledge retrieval
+status: stub
+spec_version: "1.0"
+
+metric:
+  primary: "nDCG@5"
+  secondary: [recall_at_5, precision_at_5]
+  pass_threshold: 0.70
+
+description: |
+  Tests the TacitKnowledgeCuratorAgent's ability to retrieve relevant SOP
+  passages, expert notes, and historical work orders in response to operator
+  queries using the RAG pipeline backed by ChromaDB.
+
+  A fixed set of 30 operator queries are issued against an indexed corpus of
+  synthetic SOPs (data/synthetic/sops/) and expert notes
+  (data/synthetic/expert_notes/). Ground-truth relevance labels are provided
+  by a human-curated qrel file.
+
+  The primary metric is normalised Discounted Cumulative Gain at rank 5
+  (nDCG@5), which rewards correct documents appearing near the top of the
+  result list.
+
+inputs:
+  source: data/synthetic/sops/ and data/synthetic/expert_notes/
+  queries: benchmarks/data/ia2_queries.json (to be created)
+  qrels: benchmarks/data/ia2_qrels.json (to be created)
+  count: 30
+
+scoring:
+  description: |
+    For each query:
+      - Retrieve top-5 documents from ChromaDB
+      - Score each retrieved document against the qrel (0 = not relevant,
+        1 = partially relevant, 2 = highly relevant)
+      - Compute DCG@5 and normalise by ideal DCG@5
+    Report mean nDCG@5 over all queries.
+  reference_implementation: benchmarks/iabench.py::_run_task_ia2 (not yet implemented)
+
+limitations: |
+  - Requires ChromaDB to be running and pre-indexed with synthetic corpus.
+  - qrel quality is critical; human annotation is bottleneck.
+  - nDCG@5 may underrate agents that return different-but-valid documents.
+
+roadmap_to_v1_1: |
+  1. Create ia2_queries.json: 30 operator queries covering SOP lookup,
+     troubleshooting, and expert knowledge retrieval.
+  2. Create ia2_qrels.json: human-curated relevance labels for each query.
+  3. Implement _run_task_ia2() in iabench.py:
+     - Start ChromaDB, index the synthetic corpus
+     - Issue queries via TacitKnowledgeCuratorAgent
+     - Score with pytrec_eval or manual nDCG implementation.
+  4. Add ChromaDB health-check to the bench CLI pre-flight.

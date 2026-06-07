@@ -1,0 +1,56 @@
+id: IA-6
+name: Token-cost-per-decision
+status: stub
+spec_version: "1.0"
+
+metric:
+  primary: usd_per_decision
+  secondary: [input_tokens_per_decision, output_tokens_per_decision, total_tokens_per_decision]
+  pass_threshold: null   # informational only in v1.0; target TBD after baseline
+
+description: |
+  Measures the mean token cost (USD) per agent invocation across a
+  representative workload of 100 operator queries.
+
+  Cost is computed from the provider's token usage fields returned by each
+  LLM call:
+    - Anthropic: usage.input_tokens, usage.output_tokens
+    - OpenAI: usage.prompt_tokens, usage.completion_tokens
+    - Ollama: estimated from eval_count (no USD cost — report tokens only)
+
+  Pricing is looked up from a bundled price table (benchmarks/data/pricing.json)
+  which must be kept current manually.  Ollama is reported as $0.00 with a note
+  that compute cost is not included.
+
+  The 100-query workload samples evenly from:
+    - Anomaly analysis (20 queries) → AnomalyRootCauseAgent
+    - SOP lookup (20 queries) → TacitKnowledgeCuratorAgent
+    - Work-order creation (20 queries) → WorkOrderMESAgent
+    - Safety evaluation (20 queries) → SafetyGuardrailAgent
+    - Operator copilot (20 queries) → ShopFloorCopilotAgent
+
+inputs:
+  queries: benchmarks/data/ia6_workload_queries.json (to be created)
+  pricing: benchmarks/data/pricing.json (to be created)
+  count: 100
+
+scoring:
+  description: |
+    For each query, record input_tokens and output_tokens from the LLM response.
+    Multiply by the per-token price for the model/provider.
+    Report mean USD per decision (input + output combined).
+  reference_implementation: benchmarks/iabench.py::_run_task_ia6 (not yet implemented)
+
+limitations: |
+  - Pricing table requires manual maintenance as providers change rates.
+  - Ollama local cost depends on hardware; GPU vs CPU electricity cost not captured.
+  - Multi-hop queries (agent calls multiple LLMs in sequence) must sum all hops.
+  - Context caching (Anthropic) can reduce real costs below naive calculation.
+
+roadmap_to_v1_1: |
+  1. Create ia6_workload_queries.json: 100 representative queries, 20 per agent.
+  2. Create benchmarks/data/pricing.json with current per-token prices for
+     claude-sonnet-4-6, gpt-4o, llama3.1:8b (ollama, $0).
+  3. Add token_tracker.py middleware that intercepts LLM responses and sums tokens.
+  4. Implement _run_task_ia6() in iabench.py.
+  5. Run multi-provider comparison: Anthropic vs OpenAI vs Ollama on same workload.

@@ -56,10 +56,11 @@ def chat(
 
 @app.command()
 def bench(
-    suite: str = typer.Option("all", "--suite", "-s", help="Benchmark suite name."),
+    suite: str = typer.Option("all", "--suite", "-s", help="Task ID or 'all'."),
     model: str = typer.Option("llama3.1:8b", "--model", "-m", help="Model identifier."),
     provider: str = typer.Option("ollama", "--provider", "-p", help="LLM provider."),
     out: str = typer.Option("benchmarks/results/", "--out", help="Output directory."),
+    supplementary: bool = typer.Option(False, "--supplementary", help="Also run IA-LIN."),
 ) -> None:
     """Run the Industrial Agent Benchmark (IABENCH-v1)."""
     import asyncio
@@ -71,12 +72,20 @@ def bench(
     out_path = Path(out) / f"iabench_{suite}_{model.replace(':', '_')}.json"
 
     result_suite = asyncio.run(
-        run_suite(suite_name=suite, model=model, provider=provider, output_path=out_path)
+        run_suite(
+            suite_name=suite,
+            model=model,
+            provider=provider,
+            output_path=out_path,
+            include_supplementary=supplementary,
+        )
     )
 
     summary = result_suite.summary()
+    implemented = summary["passed"] + summary["failed"]
     typer.echo(
-        f"Results: {summary['passed']}/{summary['total_tasks']} tasks passed. Saved to {out_path}"
+        f"Results: {summary['passed']}/{implemented} implemented tasks passed"
+        f" | {summary['not_implemented']} stubs skipped. Saved to {out_path}"
     )
     raise typer.Exit(code=0 if result_suite.passed() else 1)
 

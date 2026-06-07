@@ -1,0 +1,53 @@
+id: IA-1
+name: Root-cause attribution
+status: implemented
+spec_version: "1.0"
+
+metric:
+  primary: F1
+  secondary: [precision, recall]
+  pass_threshold: 0.70
+
+description: |
+  Tests the AnomalyRootCauseAgent's ability to detect an anomaly and correctly
+  classify its fault type given a time-series window from the synthetic UNS dataset.
+
+  The agent receives a 60-point sensor window (1-minute intervals) surrounding
+  an injected anomaly (bearing_wear, hydraulic_leak, or filter_clog) and must
+  return:
+    - anomaly_detected: true/false
+    - anomaly_type: fault type string
+
+  Ground truth is the injected fault type from UNSDataGenerator. Predicted and
+  ground-truth strings are normalised to kebab-case before comparison to avoid
+  surface-form mismatches (e.g. "bearing_wear" == "bearing-wear").
+
+inputs:
+  source: data/synthetic/ (generated at runtime by UNSDataGenerator seed=42)
+  count: 3   # number of injected anomalies; increases with longer n_hours
+  window_hours_before: 2
+  window_hours_after: 1
+
+scoring:
+  description: |
+    For each sample:
+      TP: anomaly_detected=True AND normalised fault type matches ground truth
+      FP: anomaly_detected=True AND fault type does NOT match ground truth
+      FN: anomaly_detected=False (miss) OR exception during agent call
+    precision = TP / (TP + FP), recall = TP / (TP + FN)
+    F1 = harmonic mean of precision and recall
+  reference_implementation: benchmarks/iabench.py::_run_task_ia1
+
+limitations: |
+  - Dataset contains only 3 anomaly types (bearing_wear, hydraulic_leak, filter_clog).
+    Model may appear to perform well by guessing one type repeatedly.
+  - The agent is currently run with a mock UNS context broker, so real OPC UA
+    or MQTT telemetry quality issues are not captured.
+  - No multi-asset or concurrent-anomaly test cases yet.
+  - n_samples=3 is low; target is 50+ for v1.1 (requires longer synthetic runs).
+
+roadmap_to_v1_1: |
+  Not applicable — task is implemented. V1.1 improvements:
+  - Expand synthetic dataset to 50+ anomaly samples
+  - Add adversarial time-series (high-noise, missing data windows)
+  - Report confusion matrix per fault type

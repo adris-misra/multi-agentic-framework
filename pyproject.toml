@@ -149,7 +149,6 @@ module = [
   "stumpy.*",
   "unstructured.*",
   "openlineage.*",
-  "asyncua.*",
   "paho.*",
   "sparkplug_b.*",
   "ollama.*",
@@ -172,6 +171,11 @@ module = [
   "plotly.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["asyncua", "asyncua.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
