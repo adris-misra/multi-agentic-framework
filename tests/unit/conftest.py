@@ -16,12 +16,12 @@ from industrial_agents.agents.base import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def trace_id() -> str:
     return str(uuid.uuid4())
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_message(trace_id: str) -> AgentMessage:
     return AgentMessage(
         sender="test",
@@ -30,7 +30,7 @@ def sample_message(trace_id: str) -> AgentMessage:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_context_broker() -> ContextBrokerProtocol:
     broker = AsyncMock(spec=ContextBrokerProtocol)
     broker.validate_zone.return_value = True
@@ -38,7 +38,7 @@ def mock_context_broker() -> ContextBrokerProtocol:
     return broker  # type: ignore[return-value]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_governance() -> GovernanceProtocol:
     gov = AsyncMock(spec=GovernanceProtocol)
     gov.sign_decision.return_value = "fake-signature-abc123"
@@ -46,7 +46,7 @@ def mock_governance() -> GovernanceProtocol:
     return gov  # type: ignore[return-value]
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_decision(trace_id: str) -> AgentDecision:
     return AgentDecision(
         agent="test_agent",
@@ -61,7 +61,7 @@ def sample_decision(trace_id: str) -> AgentDecision:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_llm() -> Any:
     llm = AsyncMock()
     llm.complete.return_value = {

@@ -130,7 +130,7 @@ class SparkplugClient:
         import paho.mqtt.client as mqtt_mod
 
         self._client = mqtt_mod.Client(client_id=self._client_id, protocol=mqtt_mod.MQTTv5)
-        self._client.on_message = self._on_paho_message  # type: ignore[assignment]
+        self._client.on_message = self._on_paho_message
 
         def on_connect(
             client: mqtt.Client,

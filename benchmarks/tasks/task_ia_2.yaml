@@ -1,6 +1,6 @@
 id: IA-2
 name: Tacit-knowledge retrieval
-status: stub
+status: implemented
 spec_version: "1.0"
 
 metric:
@@ -13,10 +13,10 @@ description: |
   passages, expert notes, and historical work orders in response to operator
   queries using the RAG pipeline backed by ChromaDB.
 
-  A fixed set of 30 operator queries are issued against an indexed corpus of
+  A fixed set of 12 operator queries are issued against an indexed corpus of
   synthetic SOPs (data/synthetic/sops/) and expert notes
   (data/synthetic/expert_notes/). Ground-truth relevance labels are provided
-  by a human-curated qrel file.
+  as inline qrels in benchmarks/data/ia2_queries.json.
 
   The primary metric is normalised Discounted Cumulative Gain at rank 5
   (nDCG@5), which rewards correct documents appearing near the top of the
@@ -24,31 +24,30 @@ description: |
 
 inputs:
   source: data/synthetic/sops/ and data/synthetic/expert_notes/
-  queries: benchmarks/data/ia2_queries.json (to be created)
-  qrels: benchmarks/data/ia2_qrels.json (to be created)
-  count: 30
+  queries: benchmarks/data/ia2_queries.json
+  count: 12
 
 scoring:
   description: |
     For each query:
-      - Retrieve top-5 documents from ChromaDB
+      - Invoke TacitKnowledgeCuratorAgent (no ChromaDB required — agent
+        relies on LLM knowledge when vector store is absent)
+      - Normalise each returned source_document string to a corpus doc ID
+        (SOP-MAINT-001, SOP-MAINT-002, EN-001, EN-002)
       - Score each retrieved document against the qrel (0 = not relevant,
         1 = partially relevant, 2 = highly relevant)
       - Compute DCG@5 and normalise by ideal DCG@5
     Report mean nDCG@5 over all queries.
-  reference_implementation: benchmarks/iabench.py::_run_task_ia2 (not yet implemented)
+
+    Honest-reporting rules:
+      - Missing positions (agent returns < 5 sources) → relevance 0
+      - Per-query errors tracked as error_rate; reliable=false if > 10%
+      - mean_ndcg==1.0 exactly flagged as suspicious; passed=false
+  reference_implementation: benchmarks/iabench.py::_run_task_ia2
 
 limitations: |
-  - Requires ChromaDB to be running and pre-indexed with synthetic corpus.
-  - qrel quality is critical; human annotation is bottleneck.
+  - Without ChromaDB pre-indexed, the agent has no retrieved context; scores
+    reflect LLM training-time knowledge only — expect low nDCG.
   - nDCG@5 may underrate agents that return different-but-valid documents.
-
-roadmap_to_v1_1: |
-  1. Create ia2_queries.json: 30 operator queries covering SOP lookup,
-     troubleshooting, and expert knowledge retrieval.
-  2. Create ia2_qrels.json: human-curated relevance labels for each query.
-  3. Implement _run_task_ia2() in iabench.py:
-     - Start ChromaDB, index the synthetic corpus
-     - Issue queries via TacitKnowledgeCuratorAgent
-     - Score with pytrec_eval or manual nDCG implementation.
-  4. Add ChromaDB health-check to the bench CLI pre-flight.
+  - Gold qrels cover 4 corpus documents; an agent aware of these IDs from
+    training has an advantage over an agent using generic RAG.

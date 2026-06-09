@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from benchmarks.iabench import (
     BenchmarkResult,
     BenchmarkSuite,
     _make_anomaly_dataset,
     _make_stub,
+    _ndcg_at_5,
+    _normalize_doc_id,
     _normalize_fault_type,
 )
 
@@ -167,6 +171,66 @@ class TestNormalizeFaultType:
         assert _normalize_fault_type("Hydraulic Leak") == "hydraulic-leak"
         assert _normalize_fault_type("hydraulic_leak") == "hydraulic-leak"
         assert _normalize_fault_type("FILTER_CLOG") == "filter-clog"
+
+
+class TestNormalizeDocId:
+    def test_exact_match(self) -> None:
+        assert _normalize_doc_id("SOP-MAINT-001") == "SOP-MAINT-001"
+
+    def test_case_insensitive(self) -> None:
+        assert _normalize_doc_id("sop-maint-001") == "SOP-MAINT-001"
+
+    def test_embedded_in_path(self) -> None:
+        assert _normalize_doc_id("data/sops/SOP-MAINT-002-hydraulic.md") == "SOP-MAINT-002"
+
+    def test_expert_note_id(self) -> None:
+        assert _normalize_doc_id("EN-001 expert notes") == "EN-001"
+
+    def test_unknown_returns_stripped(self) -> None:
+        result = _normalize_doc_id("  some-unknown-doc  ")
+        assert result == "some-unknown-doc"
+
+    def test_longer_id_wins_over_shorter(self) -> None:
+        # SOP-MAINT-001 should match before EN-001 when both appear
+        result = _normalize_doc_id("SOP-MAINT-001 references EN-001")
+        assert result == "SOP-MAINT-001"
+
+
+class TestNdcgAt5:
+    def test_perfect_ranking(self) -> None:
+        qrels = {"A": 2, "B": 1}
+        score = _ndcg_at_5(["A", "B"], qrels)
+        assert score == pytest.approx(1.0)
+
+    def test_empty_retrieved(self) -> None:
+        qrels = {"A": 2}
+        assert _ndcg_at_5([], qrels) == pytest.approx(0.0)
+
+    def test_no_relevant_docs(self) -> None:
+        qrels: dict[str, int] = {}
+        assert _ndcg_at_5(["A", "B"], qrels) == pytest.approx(0.0)
+
+    def test_wrong_order_lower_than_perfect(self) -> None:
+        qrels = {"A": 2, "B": 1}
+        perfect = _ndcg_at_5(["A", "B"], qrels)
+        reversed_order = _ndcg_at_5(["B", "A"], qrels)
+        assert reversed_order < perfect
+
+    def test_irrelevant_docs_score_zero(self) -> None:
+        qrels = {"GOOD": 2}
+        score = _ndcg_at_5(["BAD1", "BAD2", "BAD3"], qrels)
+        assert score == pytest.approx(0.0)
+
+    def test_only_first_five_scored(self) -> None:
+        qrels = {"SIXTH": 2}
+        # SIXTH is at position 6 — beyond @5 cutoff → should score 0
+        score = _ndcg_at_5(["A", "B", "C", "D", "E", "SIXTH"], qrels)
+        assert score == pytest.approx(0.0)
+
+    def test_partial_relevance(self) -> None:
+        qrels = {"A": 2, "B": 1}
+        score = _ndcg_at_5(["A"], qrels)
+        assert 0.0 < score < 1.0
 
 
 class TestStubFactory:

@@ -12,7 +12,7 @@ from industrial_agents.orchestration.escalation_grammar import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def router() -> EscalationRouter:
     return EscalationRouter(hitl_threshold=0.85)
 

@@ -1,0 +1,109 @@
+[
+  {
+    "id": "q001",
+    "query": "What vibration RMS threshold triggers motor bearing replacement on motor_01?",
+    "gold_labels": {
+      "SOP-MAINT-001": 2,
+      "EN-001": 1
+    },
+    "notes": "SOP-MAINT-001 states the 4.5 mm/s threshold directly; EN-001 corroborates with expert context."
+  },
+  {
+    "id": "q002",
+    "query": "What PPE is required when handling bearings during motor maintenance?",
+    "gold_labels": {
+      "SOP-MAINT-001": 2,
+      "EN-001": 1
+    },
+    "notes": "SOP specifies nitrile gloves; EN-001 adds the reason (prevent skin-oil contamination)."
+  },
+  {
+    "id": "q003",
+    "query": "What is the part number for the drive end bearing on motor_01?",
+    "gold_labels": {
+      "SOP-MAINT-001": 2,
+      "EN-001": 1
+    },
+    "notes": "Part BRG-6310-2RS appears in the SOP parts table; EN-001 reaffirms with additional context."
+  },
+  {
+    "id": "q004",
+    "query": "What temperature should bearings be heated to before installation, and what tool is used?",
+    "gold_labels": {
+      "SOP-MAINT-001": 2,
+      "EN-001": 2
+    },
+    "notes": "SOP and EN-001 both specify 80-100 degrees C and induction heater TOOL-HEAT-01."
+  },
+  {
+    "id": "q005",
+    "query": "What hydraulic system pressure should be restored after filter replacement on hydraulic_01?",
+    "gold_labels": {
+      "SOP-MAINT-002": 2,
+      "EN-002": 1
+    },
+    "notes": "SOP-MAINT-002 acceptance: 200 +/- 5 bar; EN-002 elaborates on troubleshooting pressure issues."
+  },
+  {
+    "id": "q006",
+    "query": "When should the hydraulic filter element be replaced according to the PM schedule?",
+    "gold_labels": {
+      "SOP-MAINT-002": 2,
+      "EN-002": 1
+    },
+    "notes": "SOP-MAINT-002 states 2000-hour PM schedule; EN-002 notes typical filter life 1600-1800 hours."
+  },
+  {
+    "id": "q007",
+    "query": "What is the torque specification for the hydraulic filter bowl?",
+    "gold_labels": {
+      "SOP-MAINT-002": 2,
+      "EN-002": 2
+    },
+    "notes": "Both SOP and EN-002 specify 35 Nm with torque wrench."
+  },
+  {
+    "id": "q008",
+    "query": "What qualifications and certifications are required to perform motor bearing replacement?",
+    "gold_labels": {
+      "SOP-MAINT-001": 2
+    },
+    "notes": "SOP-MAINT-001 section 2 specifies Electrical Journeyman (NFPA 70E) and Mechanical Technician Level 2."
+  },
+  {
+    "id": "q009",
+    "query": "What causes hydraulic filter clogging and what are the consequences of ignoring it?",
+    "gold_labels": {
+      "SOP-MAINT-002": 1,
+      "EN-002": 2
+    },
+    "notes": "EN-002 gives expert detail on contamination causes; SOP-MAINT-002 references FM-HYD-003 failure mode."
+  },
+  {
+    "id": "q010",
+    "query": "How do I verify motor alignment after reinstallation, and what is the acceptance tolerance?",
+    "gold_labels": {
+      "SOP-MAINT-001": 2,
+      "EN-001": 2
+    },
+    "notes": "Both specify < 0.05 mm TIR; EN-001 gives practical tips on using dial indicator."
+  },
+  {
+    "id": "q011",
+    "query": "What LOTO and safety steps are required before starting hydraulic filter maintenance?",
+    "gold_labels": {
+      "SOP-MAINT-002": 2,
+      "SOP-MAINT-001": 1
+    },
+    "notes": "SOP-MAINT-002 covers hydraulic depressurization; SOP-MAINT-001 covers LOTO as a general reference."
+  },
+  {
+    "id": "q012",
+    "query": "What are the acceptance criteria for vibration and temperature after motor bearing replacement?",
+    "gold_labels": {
+      "SOP-MAINT-001": 2,
+      "EN-001": 1
+    },
+    "notes": "SOP specifies vibration < 2.5 mm/s, bearing temp < 70 C above ambient; EN-001 describes the run-in procedure."
+  }
+]
