@@ -8,7 +8,7 @@ from industrial_agents.agents.base import AgentMessage, AgentRole
 from industrial_agents.orchestration.routing_policy import RoutingPolicy, RoutingRule
 
 
-@pytest.fixture
+@pytest.fixture()  # noqa: PT001
 def policy() -> RoutingPolicy:
     return RoutingPolicy()
 

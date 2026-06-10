@@ -13,6 +13,7 @@ import structlog
 
 if TYPE_CHECKING:
     import paho.mqtt.client as mqtt
+    from paho.mqtt.client import Client as _MQTTClient
 
 log = structlog.get_logger(__name__)
 
@@ -98,8 +99,8 @@ class SparkplugClient:
 
     def _on_paho_message(
         self: Self,
-        _client: object,
-        _userdata: object,
+        _client: _MQTTClient,
+        _userdata: Any,  # noqa: ANN401
         msg: _MQTTMessage,
     ) -> None:
         try:
