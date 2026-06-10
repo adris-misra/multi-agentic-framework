@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install ruff
-        run: pip install ruff==0.4.7
+        run: pip install ruff==0.15.16
       - name: Ruff check
         run: ruff check src/ tests/ benchmarks/ examples/
       - name: Ruff format check

@@ -100,7 +100,7 @@ class SparkplugClient:
     def _on_paho_message(
         self: Self,
         _client: _MQTTClient,
-        _userdata: Any,  # noqa: ANN401
+        _userdata: Any,  # noqa: ANN401  — paho userdata is intentionally opaque
         msg: _MQTTMessage,
     ) -> None:
         try:
