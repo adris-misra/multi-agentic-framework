@@ -22,7 +22,7 @@ def _make_agent(cls: type, name: str, llm: Any, broker: Any, gov: Any, **kwargs:
 
 
 class TestOperationalIntentAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_parse_intent_returns_message(
         self,
         mock_llm: AsyncMock,
@@ -57,7 +57,7 @@ class TestOperationalIntentAgent:
         assert result.intent == "diagnose_anomaly"
         assert result.confidence == pytest.approx(0.91)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_parse_intent_fallback_on_bad_json(
         self,
         mock_llm: AsyncMock,
@@ -135,7 +135,7 @@ class TestUNSContextBrokerAgent:
 
 
 class TestHITLSupervisorAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_routes_when_below_threshold(
         self,
         mock_llm: Any,
@@ -162,7 +162,7 @@ class TestHITLSupervisorAgent:
         assert result.intent == "hitl_pending"
         assert result.payload["routed"] is True
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_passes_when_above_threshold(
         self,
         mock_llm: Any,
@@ -208,7 +208,7 @@ class TestGovernanceLineageAgent:
         sig = agent.sign_decision(sample_decision)
         assert sig.startswith("unsigned:")
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_emit_lineage_stores_event(
         self,
         mock_llm: Any,
@@ -230,7 +230,7 @@ class TestGovernanceLineageAgent:
 
 
 class TestTelemetryHistorianAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_returns_telemetry_message(
         self,
         mock_llm: AsyncMock,
@@ -274,7 +274,7 @@ class TestTelemetryHistorianAgent:
 
 
 class TestWorkOrderMESAgent:
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_work_order(
         self,
         mock_llm: AsyncMock,
@@ -318,7 +318,7 @@ class TestWorkOrderMESAgent:
         assert result.intent == "work_order_created"
         assert "work_order" in result.payload
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_idempotent_on_second_call(
         self,
         mock_llm: AsyncMock,

@@ -61,6 +61,15 @@ def bench(
     provider: str = typer.Option("ollama", "--provider", "-p", help="LLM provider."),
     out: str = typer.Option("benchmarks/results/", "--out", help="Output directory."),
     supplementary: bool = typer.Option(False, "--supplementary", help="Also run IA-LIN."),
+    judge_model: str = typer.Option(
+        "",
+        "--judge-model",
+        help=(
+            "Model used as LLM-as-judge in IA-5 hallucination scoring. "
+            "Defaults to the same model as the agent under test. "
+            "Using a different (typically larger) judge model reduces sycophancy risk."
+        ),
+    ),
 ) -> None:
     """Run the Industrial Agent Benchmark (IABENCH-v1)."""
     import asyncio
@@ -68,6 +77,7 @@ def bench(
 
     from benchmarks.iabench import run_suite
 
+    resolved_judge = judge_model.strip() or None
     typer.echo(f"Running IABENCH-v1 suite={suite} model={model} provider={provider}...")
     out_path = Path(out) / f"iabench_{suite}_{model.replace(':', '_')}.json"
 
@@ -78,6 +88,7 @@ def bench(
             provider=provider,
             output_path=out_path,
             include_supplementary=supplementary,
+            judge_model=resolved_judge,
         )
     )
 

@@ -1,7 +1,7 @@
 # Industrial Agent Benchmark (IABENCH-v1)
 
-> **Status:** v1.0 — IA-1 and IA-3 fully implemented. IA-2, 4–7 are stubs scheduled
-> for PRs 2–5 of the `bench/iabench-*` series.
+> **Status:** v1.0 — IA-1, IA-2, IA-3, and IA-5 fully implemented. IA-4, 6–7 are stubs
+> scheduled for PRs 3–5 of the `bench/iabench-*` series.
 
 ## Overview
 
@@ -18,10 +18,10 @@ manufacturing-specific tasks. It is designed to be:
 | Task ID | Name | Primary Metric | Pass Threshold | Status |
 |---------|------|---------------|----------------|--------|
 | IA-1 | Root-cause attribution | F1 | 0.70 | ✅ Implemented |
-| IA-2 | Tacit-knowledge retrieval | nDCG@5 | 0.70 | 🔲 Stub (PR 2) |
+| IA-2 | Tacit-knowledge retrieval | nDCG@5 | 0.70 | ✅ Implemented |
 | IA-3 | Safety guardrail compliance | block_rate, fpr | 0.90 / ≤0.10 | ✅ Implemented |
 | IA-4 | Multi-source synthesis | rubric 1–5 | 3.5 | 🔲 Stub (PR 3) |
-| IA-5 | Hallucination rate | % unsupported claims | ≤2% | 🔲 Stub (PR 3) |
+| IA-5 | Hallucination rate | % unsupported claims | ≤2% | ✅ Implemented |
 | IA-6 | Token-cost-per-decision | USD/invocation | informational | 🔲 Stub (PR 4) |
 | IA-7 | Mean-time-to-escalation | routing F1 | 0.80 | 🔲 Stub (PR 4) |
 
@@ -53,6 +53,9 @@ python -m benchmarks.iabench ollama llama3.1:8b
 
 # Include supplementary IA-LIN check
 industrial-agents bench --suite all --provider ollama --supplementary
+
+# IA-5: use a different (larger) model as LLM-as-judge to reduce sycophancy
+industrial-agents bench --suite IA-5 --provider ollama --model llama3.1:8b --judge-model llama3.1:70b
 ```
 
 ## Interpreting Results
@@ -66,8 +69,11 @@ After a run, the JSON output in `benchmarks/results/` contains:
 
 **Warning signs:**
 - IA-1 F1 = 1.0 exactly → possible bug or trivially easy dataset
+- IA-2 nDCG@5 = 1.0 exactly → flagged suspicious; result `passed=false`; investigate
 - IA-3 block_rate = 1.0 AND error_rate > 0 → exceptions are being counted as blocks
 - IA-3 fpr > 0.10 → guardrail is too aggressive; investigate benign verdicts
+- IA-5 hallucination_pct = 0.0 exactly → flagged suspicious; result `passed=false`; investigate
+- IA-5 reliable = false → judge error rate > 10%; check LLM connectivity
 
 ## Task Spec Files
 

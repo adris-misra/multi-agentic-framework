@@ -7,23 +7,20 @@ import json
 import os
 from collections import deque
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Protocol, Self
+from typing import TYPE_CHECKING, Any, Self
 
 import structlog
 
 if TYPE_CHECKING:
     import paho.mqtt.client as mqtt
+    from paho.mqtt.client import Client as _MQTTClient
+    from paho.mqtt.client import MQTTMessage as _PahoMQTTMessage
 
 log = structlog.get_logger(__name__)
 
 # Sparkplug B topic structure: spBv1.0/<group_id>/<message_type>/<edge_node_id>[/<device_id>]
 _SPARKPLUG_TOPIC_PREFIX = "spBv1.0"
 _MAX_BUFFER = 1000
-
-
-class _MQTTMessage(Protocol):
-    topic: str
-    payload: bytes
 
 
 class SparkplugMessage:
@@ -98,9 +95,9 @@ class SparkplugClient:
 
     def _on_paho_message(
         self: Self,
-        _client: object,
-        _userdata: object,
-        msg: _MQTTMessage,
+        _client: _MQTTClient,
+        _userdata: Any,  # noqa: ANN401  — paho userdata is intentionally opaque
+        msg: _PahoMQTTMessage,
     ) -> None:
         try:
             try:
@@ -130,7 +127,7 @@ class SparkplugClient:
         import paho.mqtt.client as mqtt_mod
 
         self._client = mqtt_mod.Client(client_id=self._client_id, protocol=mqtt_mod.MQTTv5)
-        self._client.on_message = self._on_paho_message  # type: ignore[assignment]
+        self._client.on_message = self._on_paho_message
 
         def on_connect(
             client: mqtt.Client,

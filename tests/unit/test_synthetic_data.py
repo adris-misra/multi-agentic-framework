@@ -11,7 +11,7 @@ from industrial_agents.synthetic.uns_generator import UNSDataGenerator
 
 
 class TestUNSDataGenerator:
-    @pytest.fixture()
+    @pytest.fixture
     def gen(self) -> UNSDataGenerator:
         return UNSDataGenerator(seed=42)
 
