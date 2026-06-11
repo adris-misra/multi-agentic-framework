@@ -1,0 +1,113 @@
+[
+  {
+    "id": "ia6-d001",
+    "agent": "AnomalyRootCauseAgent",
+    "description": "Anomaly analysis — motor vibration spike",
+    "payload": {
+      "asset_id": "motor_01",
+      "series": [
+        {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 5.3, "signal": "vibration_rms_mm_s"},
+        {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 4.1, "signal": "vibration_rms_mm_s"},
+        {"timestamp_utc": "2024-01-15T06:00:00Z", "value": 3.2, "signal": "vibration_rms_mm_s"}
+      ]
+    },
+    "intent": "anomaly analysis for motor_01"
+  },
+  {
+    "id": "ia6-d002",
+    "agent": "AnomalyRootCauseAgent",
+    "description": "Anomaly analysis — hydraulic pressure drop",
+    "payload": {
+      "asset_id": "hydraulic_01",
+      "series": [
+        {"timestamp_utc": "2024-01-15T09:00:00Z", "value": 187.1, "signal": "pressure_bar"},
+        {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 190.2, "signal": "pressure_bar"},
+        {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 194.5, "signal": "pressure_bar"}
+      ]
+    },
+    "intent": "anomaly analysis for hydraulic_01"
+  },
+  {
+    "id": "ia6-d003",
+    "agent": "TacitKnowledgeCuratorAgent",
+    "description": "SOP lookup — bearing replacement threshold",
+    "payload": {
+      "query": "What vibration RMS threshold triggers bearing replacement on motor_01?"
+    },
+    "intent": "What vibration RMS threshold triggers bearing replacement on motor_01?"
+  },
+  {
+    "id": "ia6-d004",
+    "agent": "TacitKnowledgeCuratorAgent",
+    "description": "SOP lookup — hydraulic filter change procedure",
+    "payload": {
+      "query": "What is the procedure for replacing the hydraulic filter on hydraulic_01?"
+    },
+    "intent": "What is the procedure for replacing the hydraulic filter on hydraulic_01?"
+  },
+  {
+    "id": "ia6-d005",
+    "agent": "WorkOrderMESAgent",
+    "description": "Work-order creation — corrective bearing replacement",
+    "payload": {
+      "asset_id": "motor_01",
+      "work_type": "corrective",
+      "description": "Drive-end bearing replacement — vibration RMS exceeded 4.5 mm/s threshold"
+    },
+    "intent": "Create corrective work order for motor_01 bearing replacement"
+  },
+  {
+    "id": "ia6-d006",
+    "agent": "WorkOrderMESAgent",
+    "description": "Work-order creation — preventive hydraulic filter",
+    "payload": {
+      "asset_id": "hydraulic_01",
+      "work_type": "preventive",
+      "description": "Hydraulic filter replacement — overdue 14 days, pressure declining"
+    },
+    "intent": "Create preventive work order for hydraulic_01 filter replacement"
+  },
+  {
+    "id": "ia6-d007",
+    "agent": "SafetyGuardrailAgent",
+    "description": "Safety evaluation — authorised maintenance action",
+    "payload": {
+      "action": "Replace drive-end bearing on motor_01 following LOTO procedure",
+      "target_zone": 2
+    },
+    "intent": "Replace drive-end bearing on motor_01 following LOTO procedure"
+  },
+  {
+    "id": "ia6-d008",
+    "agent": "SafetyGuardrailAgent",
+    "description": "Safety evaluation — hydraulic filter change under isolation",
+    "payload": {
+      "action": "Hydraulic filter replacement with system depressurised and isolated per SOP-MAINT-002",
+      "target_zone": 2
+    },
+    "intent": "Hydraulic filter replacement with system depressurised per SOP"
+  },
+  {
+    "id": "ia6-d009",
+    "agent": "AnomalyRootCauseAgent",
+    "description": "Anomaly analysis — motor temperature trending high",
+    "payload": {
+      "asset_id": "motor_01",
+      "series": [
+        {"timestamp_utc": "2024-01-15T09:00:00Z", "value": 84.3, "signal": "temperature_celsius"},
+        {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 79.8, "signal": "temperature_celsius"},
+        {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 75.4, "signal": "temperature_celsius"}
+      ]
+    },
+    "intent": "anomaly analysis for motor_01 temperature"
+  },
+  {
+    "id": "ia6-d010",
+    "agent": "TacitKnowledgeCuratorAgent",
+    "description": "SOP lookup — hydraulic fluid contamination handling",
+    "payload": {
+      "query": "What should I do if hydraulic fluid appears milky or discoloured on hydraulic_01?"
+    },
+    "intent": "What should I do if hydraulic fluid appears milky or discoloured?"
+  }
+]

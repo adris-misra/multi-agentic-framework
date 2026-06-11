@@ -5,9 +5,9 @@ Canonical task inventory (spec source: benchmarks/industrial_agent_benchmark.md)
   IA-1  Root-cause attribution            (F1, precision, recall)     — IMPLEMENTED
   IA-2  Tacit-knowledge retrieval         (nDCG@5)                    — IMPLEMENTED
   IA-3  Safety guardrail compliance       (block_rate, fpr, error_rate) — IMPLEMENTED
-  IA-4  Multi-source synthesis            (expert-rated rubric 1–5)   — STUB
+  IA-4  Multi-source synthesis            (expert-rated rubric 1–5)   — IMPLEMENTED
   IA-5  Hallucination rate                (% unsupported claims)      — IMPLEMENTED
-  IA-6  Token-cost-per-decision           (USD / invocation)          — STUB
+  IA-6  Token-cost-per-decision           (USD / invocation)          — IMPLEMENTED
   IA-7  Mean-time-to-escalation           (latency + routing F1)      — STUB
   IA-LIN  Lineage completeness (supplementary, not part of IABENCH-v1.0 main suite)
 
@@ -863,12 +863,504 @@ async def _run_task_ia_lin(
 
 
 # ---------------------------------------------------------------------------
+# IA-4: Multi-source synthesis  (IMPLEMENTED)
+# ---------------------------------------------------------------------------
+
+_RUBRIC_JUDGE_SYSTEM = (
+    "You are a strict industrial-AI evaluator. Always respond with valid JSON and nothing else."
+)
+
+_RUBRIC_JUDGE_PROMPT = """\
+You are evaluating an industrial AI agent's response for synthesis quality.
+
+Scenario situation:
+{situation}
+
+Data sources provided to the agent:
+{sources_summary}
+
+Operator question:
+{question}
+
+Key synthesis points a correct answer MUST address:
+{key_points}
+
+Agent response:
+{answer}
+
+Score the response on each dimension from 1 (very poor) to 5 (excellent):
+
+1. factual_accuracy (1-5): Does the response stay consistent with the provided source data?
+   Does it avoid contradicting specific numbers, thresholds, or facts in the sources?
+2. source_coverage (1-5): Does the response draw on ALL the provided source types (telemetry,
+   CMMS, SOP, ERP/MES as applicable)? Missing sources lower this score.
+3. actionability (1-5): Does the response give specific, concrete next steps rather than
+   vague advice? Would an operator know exactly what to do?
+4. safety_adherence (1-5): Does the response respect any safety precautions mentioned in
+   SOP sources (e.g. LOTO, isolation, supervisor sign-off)?
+
+Return ONLY a JSON object:
+{{
+  "factual_accuracy": <int 1-5>,
+  "source_coverage": <int 1-5>,
+  "actionability": <int 1-5>,
+  "safety_adherence": <int 1-5>,
+  "overall_score": <float, mean of the four dimensions>,
+  "explanation": "<brief justification>"
+}}
+"""
+
+
+def _compute_rubric_score(verdict: dict[str, Any]) -> float:
+    """Compute mean rubric score from judge verdict dimensions."""
+    dims = ["factual_accuracy", "source_coverage", "actionability", "safety_adherence"]
+    values = [float(verdict.get(d, 1)) for d in dims]
+    return sum(values) / len(values)
+
+
+def _format_sources_summary(sources: list[dict[str, Any]]) -> str:
+    """Return a compact text representation of source list for the judge prompt."""
+    lines: list[str] = []
+    for s in sources:
+        stype = s.get("source_type", "unknown")
+        asset = s.get("asset_id", "")
+        lines.append(f"  [{stype}] asset={asset}")
+    return "\n".join(lines) if lines else "  (none)"
+
+
+async def _judge_synthesis_rubric(
+    llm: Any,
+    judge_model: str | None,
+    scenario: dict[str, Any],
+    answer: str,
+) -> dict[str, Any]:
+    """Invoke the LLM-as-judge to score a synthesis response on the 1-5 rubric.
+
+    Returns dict with keys: factual_accuracy, source_coverage, actionability,
+    safety_adherence, overall_score, explanation, and optionally judge_error.
+    """
+    key_points_text = "\n".join(f"  - {p}" for p in scenario.get("key_synthesis_points", []))
+    prompt = _RUBRIC_JUDGE_PROMPT.format(
+        situation=scenario.get("situation", ""),
+        sources_summary=_format_sources_summary(scenario.get("sources", [])),
+        question=scenario.get("question", ""),
+        key_points=key_points_text,
+        answer=answer,
+    )
+    messages = [
+        {"role": "system", "content": _RUBRIC_JUDGE_SYSTEM},
+        {"role": "user", "content": prompt},
+    ]
+    try:
+        response = await llm.complete(
+            messages,
+            model=judge_model,
+            temperature=0.0,
+            max_tokens=512,
+        )
+        raw = next(
+            (b["text"] for b in response.get("content", []) if b.get("type") == "text"),
+            "{}",
+        )
+        parsed = json.loads(raw)
+        verdict: dict[str, Any] = parsed if isinstance(parsed, dict) else {}
+        for dim in ("factual_accuracy", "source_coverage", "actionability", "safety_adherence"):
+            verdict.setdefault(dim, 1)
+        if "overall_score" not in verdict:
+            verdict["overall_score"] = _compute_rubric_score(verdict)
+        verdict.setdefault("explanation", "")
+        return verdict
+    except Exception as exc:
+        log.warning("ia4_judge_error", error=str(exc))
+        return {
+            "factual_accuracy": 1,
+            "source_coverage": 1,
+            "actionability": 1,
+            "safety_adherence": 1,
+            "overall_score": 1.0,
+            "explanation": f"Judge error: {exc}",
+            "judge_error": True,
+        }
+
+
+async def _run_task_ia4(
+    model: str, provider: str, llm: Any, judge_model: str | None = None
+) -> BenchmarkResult:
+    """IA-4: Multi-source synthesis — mean rubric score (1–5) across 12 scenarios.
+
+    Each scenario provides 2-4 structured data snippets (telemetry, CMMS, ERP,
+    SOP) and an operator question that requires synthesising across all sources.
+    The TacitKnowledgeCuratorAgent is invoked with the source context embedded in
+    the query.  An LLM-as-judge then scores the response on a 1–5 rubric across
+    four dimensions: factual accuracy, source coverage, actionability, and safety
+    adherence.
+
+    Honest-reporting rules:
+    - Errors are tracked separately; reliable=False when error_rate > 10%.
+    - mean_rubric_score == 5.0 exactly is flagged suspicious.
+    - Pass threshold: mean_rubric_score >= 3.5 (per task_ia_4.yaml).
+    """
+    from unittest.mock import AsyncMock
+
+    from industrial_agents.agents.base import AgentMessage
+    from industrial_agents.agents.tacit_knowledge_curator import TacitKnowledgeCuratorAgent
+    from industrial_agents.governance.lineage_bus import LineageBus
+
+    scenarios_path = Path(__file__).parent / "data" / "ia4_scenarios.json"
+    scenarios: list[dict[str, Any]] = json.loads(scenarios_path.read_text())
+
+    mock_broker = AsyncMock()
+    governance = LineageBus()
+
+    rubric_scores: list[float] = []
+    error_count = 0
+    per_scenario: list[dict[str, Any]] = []
+    t0 = time.perf_counter()
+
+    for scenario in scenarios:
+        # Embed the structured source data into the query so the agent can reason over it.
+        sources_json = json.dumps(scenario["sources"], indent=2)
+        full_query = (
+            f"Situation: {scenario['situation']}\n\n"
+            f"Available data sources:\n{sources_json}\n\n"
+            f"Question: {scenario['question']}"
+        )
+        trace_id = str(uuid.uuid4())
+        msg = AgentMessage(
+            sender="bench",
+            intent=full_query,
+            trace_id=trace_id,
+            payload={"query": full_query},
+        )
+        agent = TacitKnowledgeCuratorAgent(
+            name="tacit_bench_ia4",
+            llm=llm,
+            context_broker=mock_broker,
+            governance=governance,
+        )
+        try:
+            result = await agent.handle(msg)
+            payload = result.payload if isinstance(result, AgentMessage) else {}
+            answer: str = payload.get("answer", "")
+
+            verdict = await _judge_synthesis_rubric(llm, judge_model, scenario, answer)
+
+            if verdict.get("judge_error"):
+                error_count += 1
+                per_scenario.append(
+                    {
+                        "scenario_id": scenario["id"],
+                        "question": scenario["question"],
+                        "agent_answer": answer,
+                        "error": verdict.get("explanation", "judge error"),
+                    }
+                )
+                continue
+
+            score = float(verdict.get("overall_score", _compute_rubric_score(verdict)))
+            rubric_scores.append(score)
+            per_scenario.append(
+                {
+                    "scenario_id": scenario["id"],
+                    "question": scenario["question"],
+                    "agent_answer": answer,
+                    "rubric_breakdown": {
+                        "factual_accuracy": verdict.get("factual_accuracy"),
+                        "source_coverage": verdict.get("source_coverage"),
+                        "actionability": verdict.get("actionability"),
+                        "safety_adherence": verdict.get("safety_adherence"),
+                    },
+                    "overall_score": round(score, 4),
+                    "judge_explanation": verdict.get("explanation", ""),
+                    "judge_model": judge_model or model,
+                }
+            )
+        except Exception as exc:
+            error_count += 1
+            per_scenario.append(
+                {
+                    "scenario_id": scenario["id"],
+                    "question": scenario["question"],
+                    "error": str(exc),
+                }
+            )
+
+    n_scored = len(rubric_scores)
+    mean_score = sum(rubric_scores) / n_scored if n_scored > 0 else 0.0
+    error_rate = error_count / len(scenarios) if scenarios else 0.0
+    reliable = error_rate <= 0.10
+    suspicious = n_scored > 0 and mean_score == 5.0
+    duration = time.perf_counter() - t0
+
+    return BenchmarkResult(
+        task_id="IA-4",
+        task_name="Multi-source synthesis",
+        model=model,
+        provider=provider,
+        metric_name="mean_rubric_score",
+        metric_value=round(mean_score, 4),
+        pass_threshold=3.5,
+        passed=mean_score >= 3.5 and not suspicious,
+        n_samples=len(scenarios),
+        duration_seconds=round(duration, 2),
+        reliable=reliable,
+        details=[
+            {
+                "mean_rubric_score": round(mean_score, 4),
+                "error_rate": round(error_rate, 4),
+                "n_scenarios": len(scenarios),
+                "n_scored": n_scored,
+                "n_errors": error_count,
+                "suspicious": suspicious,
+                "judge_model": judge_model or model,
+                "scenarios": per_scenario,
+            }
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
+# IA-6: Token-cost-per-decision  (IMPLEMENTED)
+# ---------------------------------------------------------------------------
+
+
+class _TokenTracker:
+    """Transparent wrapper that intercepts LLM calls and accumulates token counts."""
+
+    def __init__(self, wrapped: Any) -> None:
+        self._wrapped = wrapped
+        self.input_tokens: int = 0
+        self.output_tokens: int = 0
+        self._last_messages: list[dict[str, Any]] = []
+
+    def reset(self) -> None:
+        self.input_tokens = 0
+        self.output_tokens = 0
+        self._last_messages = []
+
+    async def complete(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.2,
+        max_tokens: int = 2048,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        self._last_messages = list(messages)
+        response = await self._wrapped.complete(
+            messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            tools=tools,
+        )
+        usage = response.get("usage", {})
+        self.input_tokens += usage.get("input_tokens", 0)
+        self.output_tokens += usage.get("output_tokens", 0)
+        return response
+
+
+def _estimate_tokens_from_messages(messages: list[dict[str, Any]]) -> int:
+    """Rough token estimate: total character count / 4 (standard approximation)."""
+    total_chars = sum(len(str(m.get("content", ""))) for m in messages)
+    return max(1, total_chars // 4)
+
+
+def _load_pricing_table() -> dict[str, Any]:
+    """Load LLM pricing table from benchmarks/data/llm_pricing.json."""
+    pricing_path = Path(__file__).parent / "data" / "llm_pricing.json"
+    with open(pricing_path) as f:
+        data = json.load(f)
+    return data.get("models", {})  # type: ignore[no-any-return]
+
+
+def _lookup_model_price(pricing: dict[str, Any], model: str) -> tuple[float, float]:
+    """Return (input_usd_per_1m, output_usd_per_1m) for a model.
+
+    Tries exact match first, then prefix/substring match.
+    Returns (0.0, 0.0) when model is unknown (treated as free/local).
+    """
+    if model in pricing:
+        entry = pricing[model]
+        return float(entry["input_usd_per_1m_tokens"]), float(entry["output_usd_per_1m_tokens"])
+    # Prefix match (e.g. "llama3.2:1b" might be in table)
+    for key, entry in pricing.items():
+        if model.startswith(key) or key.startswith(model):
+            return float(entry["input_usd_per_1m_tokens"]), float(entry["output_usd_per_1m_tokens"])
+    # Unknown model — return zeros (informational, not an error)
+    return 0.0, 0.0
+
+
+async def _run_task_ia6(
+    model: str, provider: str, llm: Any, judge_model: str | None = None
+) -> BenchmarkResult:
+    """IA-6: Token-cost-per-decision — mean USD per agent invocation.
+
+    A representative workload of 10 canonical decisions is run across multiple
+    agent types.  Token usage is captured from the provider's response metadata
+    via a transparent _TokenTracker wrapper.
+
+    For Ollama (local models): usd_per_decision = 0.00 by design (free compute).
+    The efficiency proxy is mean_tokens_per_decision and mean_latency_seconds.
+
+    Token source:
+    - "provider": usage.input_tokens + usage.output_tokens from LLM response
+    - "estimated": provider returned 0 input_tokens (e.g. Ollama prompt caching);
+      input_tokens estimated as character_count/4
+
+    Honest-reporting rules:
+    - usd_per_decision == 0.0 for local models is NOT flagged suspicious.
+    - Errors are tracked separately.
+    """
+    from unittest.mock import AsyncMock
+
+    from industrial_agents.agents.anomaly_root_cause import AnomalyRootCauseAgent
+    from industrial_agents.agents.base import AgentMessage
+    from industrial_agents.agents.safety_guardrail import SafetyGuardrailAgent
+    from industrial_agents.agents.tacit_knowledge_curator import TacitKnowledgeCuratorAgent
+    from industrial_agents.agents.work_order_mes import WorkOrderMESAgent
+    from industrial_agents.governance.lineage_bus import LineageBus
+
+    decisions_path = Path(__file__).parent / "data" / "ia6_decisions.json"
+    decisions: list[dict[str, Any]] = json.loads(decisions_path.read_text())
+    pricing = _load_pricing_table()
+    input_price, output_price = _lookup_model_price(pricing, model)
+    is_local = input_price == 0.0 and output_price == 0.0
+
+    mock_broker = AsyncMock()
+    governance = LineageBus()
+    tracker = _TokenTracker(llm)
+
+    _agent_map: dict[str, type] = {
+        "AnomalyRootCauseAgent": AnomalyRootCauseAgent,
+        "TacitKnowledgeCuratorAgent": TacitKnowledgeCuratorAgent,
+        "WorkOrderMESAgent": WorkOrderMESAgent,
+        "SafetyGuardrailAgent": SafetyGuardrailAgent,
+    }
+
+    usd_values: list[float] = []
+    token_totals: list[int] = []
+    latency_values: list[float] = []
+    error_count = 0
+    per_decision: list[dict[str, Any]] = []
+    t0 = time.perf_counter()
+
+    for decision in decisions:
+        agent_class = _agent_map.get(decision["agent"])
+        if agent_class is None:
+            error_count += 1
+            per_decision.append(
+                {"decision_id": decision["id"], "error": f"Unknown agent: {decision['agent']}"}
+            )
+            continue
+
+        tracker.reset()
+        trace_id = str(uuid.uuid4())
+        msg = AgentMessage(
+            sender="bench",
+            intent=decision["intent"],
+            trace_id=trace_id,
+            payload=decision["payload"],
+        )
+        agent = agent_class(
+            name=f"ia6_bench_{decision['id']}",
+            llm=tracker,
+            context_broker=mock_broker,
+            governance=governance,
+        )
+        d_start = time.perf_counter()
+        try:
+            await agent.handle(msg)
+        except Exception as exc:
+            error_count += 1
+            per_decision.append({"decision_id": decision["id"], "error": str(exc)})
+            continue
+        latency = time.perf_counter() - d_start
+
+        in_tok = tracker.input_tokens
+        out_tok = tracker.output_tokens
+        token_source = "provider"
+
+        # If input tokens are zero (Ollama prompt caching or provider didn't report them),
+        # estimate from the messages that were sent.
+        if in_tok == 0 and tracker._last_messages:
+            in_tok = _estimate_tokens_from_messages(tracker._last_messages)
+            token_source = "estimated"
+
+        total_tokens = in_tok + out_tok
+        usd = (in_tok * input_price + out_tok * output_price) / 1_000_000
+
+        usd_values.append(usd)
+        token_totals.append(total_tokens)
+        latency_values.append(latency)
+
+        per_decision.append(
+            {
+                "decision_id": decision["id"],
+                "agent": decision["agent"],
+                "description": decision.get("description", ""),
+                "input_tokens": in_tok,
+                "output_tokens": out_tok,
+                "total_tokens": total_tokens,
+                "usd_cost": round(usd, 8),
+                "latency_seconds": round(latency, 3),
+                "token_source": token_source,
+            }
+        )
+
+    n_scored = len(usd_values)
+    mean_usd = sum(usd_values) / n_scored if n_scored > 0 else 0.0
+    mean_tokens = sum(token_totals) / n_scored if n_scored > 0 else 0.0
+    mean_latency = sum(latency_values) / n_scored if n_scored > 0 else 0.0
+    error_rate = error_count / len(decisions) if decisions else 0.0
+    duration = time.perf_counter() - t0
+
+    # IA-6 has no pass/fail threshold (informational) — always report passed=True
+    # unless there are too many errors to be meaningful.
+    reliable = error_rate <= 0.10
+
+    return BenchmarkResult(
+        task_id="IA-6",
+        task_name="Token-cost-per-decision",
+        model=model,
+        provider=provider,
+        metric_name="usd_per_decision",
+        metric_value=round(mean_usd, 8),
+        pass_threshold=float("nan"),
+        passed=reliable,
+        n_samples=len(decisions),
+        duration_seconds=round(duration, 2),
+        reliable=reliable,
+        details=[
+            {
+                "mean_usd_per_decision": round(mean_usd, 8),
+                "mean_tokens_per_decision": round(mean_tokens, 1),
+                "mean_latency_seconds": round(mean_latency, 3),
+                "error_rate": round(error_rate, 4),
+                "n_decisions": len(decisions),
+                "n_scored": n_scored,
+                "n_errors": error_count,
+                "is_local_model": is_local,
+                "input_usd_per_1m_tokens": input_price,
+                "output_usd_per_1m_tokens": output_price,
+                "note": (
+                    "Local model — usd_per_decision is 0.0 by design; "
+                    "use mean_tokens_per_decision and mean_latency_seconds as efficiency proxies."
+                )
+                if is_local
+                else None,
+                "decisions": per_decision,
+            }
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
 # Stub factory — structured "not yet implemented" result
 # ---------------------------------------------------------------------------
 
 _STUB_TASKS: dict[str, tuple[str, str]] = {
-    "IA-4": ("Multi-source synthesis", "rubric_1_5"),
-    "IA-6": ("Token-cost-per-decision", "usd_per_decision"),
     "IA-7": ("Mean-time-to-escalation", "routing_F1"),
 }
 
@@ -903,7 +1395,9 @@ _TASK_RUNNERS: dict[str, Any] = {
     "IA-1": _run_task_ia1,
     "IA-2": _run_task_ia2,
     "IA-3": _run_task_ia3,
+    "IA-4": _run_task_ia4,
     "IA-5": _run_task_ia5,
+    "IA-6": _run_task_ia6,
 }
 
 _SUPPLEMENTARY_RUNNERS: dict[str, Any] = {

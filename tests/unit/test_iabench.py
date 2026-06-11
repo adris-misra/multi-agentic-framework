@@ -8,11 +8,16 @@ import pytest
 from benchmarks.iabench import (
     BenchmarkResult,
     BenchmarkSuite,
+    _compute_rubric_score,
+    _estimate_tokens_from_messages,
+    _load_pricing_table,
+    _lookup_model_price,
     _make_anomaly_dataset,
     _make_stub,
     _ndcg_at_5,
     _normalize_doc_id,
     _normalize_fault_type,
+    _TokenTracker,
 )
 
 
@@ -281,3 +286,200 @@ class TestStubFactory:
         assert s["failed"] == 0
         assert s["not_implemented"] == 1
         assert s["total_tasks"] == 2
+
+
+class TestComputeRubricScore:
+    def test_all_fives(self) -> None:
+        verdict = {
+            "factual_accuracy": 5,
+            "source_coverage": 5,
+            "actionability": 5,
+            "safety_adherence": 5,
+        }
+        assert _compute_rubric_score(verdict) == pytest.approx(5.0)
+
+    def test_all_ones(self) -> None:
+        verdict = {
+            "factual_accuracy": 1,
+            "source_coverage": 1,
+            "actionability": 1,
+            "safety_adherence": 1,
+        }
+        assert _compute_rubric_score(verdict) == pytest.approx(1.0)
+
+    def test_mixed_scores(self) -> None:
+        verdict = {
+            "factual_accuracy": 4,
+            "source_coverage": 3,
+            "actionability": 5,
+            "safety_adherence": 2,
+        }
+        # mean = (4+3+5+2)/4 = 14/4 = 3.5
+        assert _compute_rubric_score(verdict) == pytest.approx(3.5)
+
+    def test_missing_dimension_defaults_to_one(self) -> None:
+        verdict = {
+            "factual_accuracy": 4,
+            "source_coverage": 4,
+            # actionability and safety_adherence missing
+        }
+        # mean = (4+4+1+1)/4 = 10/4 = 2.5
+        assert _compute_rubric_score(verdict) == pytest.approx(2.5)
+
+    def test_pass_threshold_boundary(self) -> None:
+        verdict = {
+            "factual_accuracy": 4,
+            "source_coverage": 3,
+            "actionability": 4,
+            "safety_adherence": 3,
+        }
+        score = _compute_rubric_score(verdict)
+        # 3.5 exactly is at threshold
+        assert score == pytest.approx(3.5)
+        assert score >= 3.5
+
+
+class TestTokenTracker:
+    """Unit tests for _TokenTracker wrapper."""
+
+    def _make_mock_llm(self, input_tok: int, output_tok: int) -> object:
+        """Return a fake LLM that reports fixed token counts."""
+
+        class FakeLLM:
+            async def complete(
+                self,
+                messages: list,
+                *,
+                model=None,
+                temperature=0.2,
+                max_tokens=2048,
+                tools=None,
+            ) -> dict:
+                return {
+                    "content": [{"type": "text", "text": "ok"}],
+                    "usage": {"input_tokens": input_tok, "output_tokens": output_tok},
+                }
+
+        return FakeLLM()
+
+    def test_accumulates_tokens(self) -> None:
+        import asyncio
+
+        fake_llm = self._make_mock_llm(100, 50)
+        tracker = _TokenTracker(fake_llm)
+
+        async def run() -> None:
+            await tracker.complete([{"role": "user", "content": "hello"}])
+            await tracker.complete([{"role": "user", "content": "world"}])
+
+        asyncio.run(run())
+        assert tracker.input_tokens == 200
+        assert tracker.output_tokens == 100
+
+    def test_reset_clears_counts(self) -> None:
+        import asyncio
+
+        fake_llm = self._make_mock_llm(100, 50)
+        tracker = _TokenTracker(fake_llm)
+
+        async def run() -> None:
+            await tracker.complete([{"role": "user", "content": "hello"}])
+
+        asyncio.run(run())
+        tracker.reset()
+        assert tracker.input_tokens == 0
+        assert tracker.output_tokens == 0
+
+    def test_stores_last_messages(self) -> None:
+        import asyncio
+
+        fake_llm = self._make_mock_llm(10, 5)
+        tracker = _TokenTracker(fake_llm)
+        msgs = [{"role": "user", "content": "test"}]
+
+        async def run() -> None:
+            await tracker.complete(msgs)
+
+        asyncio.run(run())
+        assert tracker._last_messages == msgs
+
+    def test_zero_input_tokens_triggers_estimation(self) -> None:
+        # When input_tokens is 0, _estimate_tokens_from_messages should be used.
+        fake_llm = self._make_mock_llm(0, 30)
+        import asyncio
+
+        tracker = _TokenTracker(fake_llm)
+
+        async def run() -> None:
+            await tracker.complete([{"role": "user", "content": "hello world test message"}])
+
+        asyncio.run(run())
+        # Tracker accumulates 0 from provider — caller must check and estimate
+        assert tracker.input_tokens == 0
+        assert tracker.output_tokens == 30
+        # Estimation function should give a positive result for non-empty messages
+        estimated = _estimate_tokens_from_messages(tracker._last_messages)
+        assert estimated > 0
+
+
+class TestEstimateTokens:
+    def test_non_empty_message(self) -> None:
+        msgs = [{"role": "user", "content": "hello world"}]
+        result = _estimate_tokens_from_messages(msgs)
+        assert result >= 1
+
+    def test_empty_content(self) -> None:
+        msgs = [{"role": "user", "content": ""}]
+        result = _estimate_tokens_from_messages(msgs)
+        assert result >= 1  # minimum 1
+
+    def test_longer_content_gives_more_tokens(self) -> None:
+        short = [{"role": "user", "content": "hi"}]
+        long = [{"role": "user", "content": "hello world this is a longer message with more words"}]
+        assert _estimate_tokens_from_messages(long) > _estimate_tokens_from_messages(short)
+
+    def test_multiple_messages_summed(self) -> None:
+        single = [{"role": "user", "content": "hello world"}]
+        double = [
+            {"role": "user", "content": "hello world"},
+            {"role": "assistant", "content": "hello world"},
+        ]
+        assert _estimate_tokens_from_messages(double) > _estimate_tokens_from_messages(single)
+
+
+class TestPricingTable:
+    def test_loads_without_error(self) -> None:
+        table = _load_pricing_table()
+        assert isinstance(table, dict)
+        assert len(table) > 0
+
+    def test_ollama_model_is_free(self) -> None:
+        table = _load_pricing_table()
+        in_price, out_price = _lookup_model_price(table, "llama3.2:1b")
+        assert in_price == 0.0
+        assert out_price == 0.0
+
+    def test_known_cloud_model_has_nonzero_price(self) -> None:
+        table = _load_pricing_table()
+        in_price, out_price = _lookup_model_price(table, "claude-sonnet-4-6")
+        assert in_price > 0.0
+        assert out_price > 0.0
+
+    def test_unknown_model_returns_zeros(self) -> None:
+        table = _load_pricing_table()
+        in_price, out_price = _lookup_model_price(table, "nonexistent-model-xyz")
+        assert in_price == 0.0
+        assert out_price == 0.0
+
+    def test_cost_computation(self) -> None:
+        # 1000 input tokens + 500 output tokens at $3/$15 per 1M
+        in_price = 3.0
+        out_price = 15.0
+        usd = (1000 * in_price + 500 * out_price) / 1_000_000
+        assert usd == pytest.approx(0.003 + 0.0075)
+
+    def test_local_model_cost_is_zero(self) -> None:
+        in_price = 0.0
+        out_price = 0.0
+        usd = (10000 * in_price + 5000 * out_price) / 1_000_000
+        assert usd == 0.0

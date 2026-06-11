@@ -1,0 +1,723 @@
+[
+  {
+    "id": "ia4-001",
+    "situation": "motor_01 on Line-1 has been running hot and exhibiting vibration over the past shift.",
+    "sources": [
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "temperature_celsius",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-15T06:00:00Z", "value": 72.1},
+          {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 75.4},
+          {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 79.8},
+          {"timestamp_utc": "2024-01-15T09:00:00Z", "value": 84.3}
+        ],
+        "normal_range": {"min": 60.0, "max": 80.0}
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "vibration_rms_mm_s",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-15T06:00:00Z", "value": 2.1},
+          {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 3.2},
+          {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 4.1},
+          {"timestamp_utc": "2024-01-15T09:00:00Z", "value": 5.3}
+        ],
+        "sop_threshold": 4.5
+      },
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "motor_01",
+        "records": [
+          {
+            "wo_id": "WO-2023-0714",
+            "type": "corrective",
+            "description": "Drive-end bearing replacement (BRG-6310-2RS)",
+            "completed_date": "2023-07-14",
+            "technician": "J. Smith"
+          }
+        ]
+      },
+      {
+        "source_type": "sop_excerpt",
+        "document_id": "SOP-MAINT-001",
+        "section": "Section 3 — Intervention Criteria",
+        "text": "Replace drive-end bearing when vibration RMS exceeds 4.5 mm/s or bearing age exceeds 12 months. LOTO required before any bearing work."
+      }
+    ],
+    "question": "motor_01 is running hot and vibrating. The bearing was last replaced in July 2023. Based on the sensor data and the SOP, what should I do and how urgent is it?",
+    "key_synthesis_points": [
+      "vibration_rms_mm_s has exceeded the SOP-MAINT-001 threshold of 4.5 mm/s (latest reading 5.3 mm/s)",
+      "temperature is trending upward above 80 degrees C normal range",
+      "bearing age is approximately 6 months since WO-2023-0714, within the 12-month limit",
+      "action required: schedule corrective bearing replacement per SOP-MAINT-001",
+      "LOTO required before any bearing work",
+      "urgency: high — vibration threshold already breached"
+    ]
+  },
+  {
+    "id": "ia4-002",
+    "situation": "press_01 on Line-2 cycle times have been drifting upward over the past week; production coordinator is asking if it will affect the shift target.",
+    "sources": [
+      {
+        "source_type": "mes_production",
+        "asset_id": "press_01",
+        "metric": "cycle_time_seconds",
+        "daily_averages": [
+          {"date": "2024-01-08", "avg_cycle_time_s": 12.1},
+          {"date": "2024-01-09", "avg_cycle_time_s": 12.4},
+          {"date": "2024-01-10", "avg_cycle_time_s": 13.0},
+          {"date": "2024-01-11", "avg_cycle_time_s": 13.8},
+          {"date": "2024-01-12", "avg_cycle_time_s": 14.5},
+          {"date": "2024-01-13", "avg_cycle_time_s": 15.2},
+          {"date": "2024-01-14", "avg_cycle_time_s": 16.1}
+        ],
+        "baseline_cycle_time_s": 12.0,
+        "shift_target_parts": 1800
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "hydraulic_01",
+        "signal": "pressure_bar",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-14T06:00:00Z", "value": 198.0},
+          {"timestamp_utc": "2024-01-14T07:00:00Z", "value": 194.5},
+          {"timestamp_utc": "2024-01-14T08:00:00Z", "value": 190.2},
+          {"timestamp_utc": "2024-01-14T09:00:00Z", "value": 187.1}
+        ],
+        "normal_range": {"min": 195.0, "max": 205.0}
+      },
+      {
+        "source_type": "cmms_backlog",
+        "asset_id": "hydraulic_01",
+        "open_work_orders": [
+          {
+            "wo_id": "WO-2024-0107",
+            "type": "preventive",
+            "description": "Hydraulic filter replacement overdue by 14 days",
+            "due_date": "2024-01-01",
+            "priority": "medium"
+          }
+        ]
+      }
+    ],
+    "question": "Press_01 cycle times have been rising for a week. Hydraulic pressure is also dropping. There is an overdue hydraulic filter WO. Are these related and will we meet shift targets?",
+    "key_synthesis_points": [
+      "press_01 cycle time has increased from 12.0 s baseline to 16.1 s — a 34% increase",
+      "hydraulic_01 pressure has dropped below the 195-205 bar normal range to 187.1 bar",
+      "overdue hydraulic filter WO-2024-0107 (14 days overdue) is the likely cause of pressure drop",
+      "reduced hydraulic pressure directly reduces press_01 cycle speed",
+      "at 16.1 s cycle time, shift capacity is approximately 1342 parts vs 1800 target — shift target at risk",
+      "recommended action: prioritize hydraulic filter WO immediately to restore pressure and cycle time"
+    ]
+  },
+  {
+    "id": "ia4-003",
+    "situation": "hydraulic_01 has shown temperature spikes twice this week. A technician also noticed milky fluid during a visual check.",
+    "sources": [
+      {
+        "source_type": "telemetry",
+        "asset_id": "hydraulic_01",
+        "signal": "oil_temperature_celsius",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-10T14:00:00Z", "value": 58.0},
+          {"timestamp_utc": "2024-01-10T15:00:00Z", "value": 67.2},
+          {"timestamp_utc": "2024-01-10T16:00:00Z", "value": 71.1},
+          {"timestamp_utc": "2024-01-12T10:00:00Z", "value": 69.8},
+          {"timestamp_utc": "2024-01-12T11:00:00Z", "value": 74.5}
+        ],
+        "normal_max": 65.0
+      },
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "hydraulic_01",
+        "records": [
+          {
+            "wo_id": "WO-2023-1105",
+            "type": "preventive",
+            "description": "Hydraulic fluid sample — NAS Class 8 (marginal)",
+            "completed_date": "2023-11-05"
+          },
+          {
+            "wo_id": "WO-2023-1220",
+            "type": "preventive",
+            "description": "Hydraulic filter replacement",
+            "completed_date": "2023-12-20"
+          }
+        ]
+      },
+      {
+        "source_type": "sop_excerpt",
+        "document_id": "SOP-MAINT-002",
+        "section": "Section 2 — Fluid Condition Monitoring",
+        "text": "Milky or discoloured fluid indicates water ingress or emulsification. Immediate fluid drain and replacement required. Operating with contaminated fluid voids equipment warranty and risks pump failure."
+      },
+      {
+        "source_type": "erp_parts_inventory",
+        "asset_id": "hydraulic_01",
+        "parts": [
+          {"part_number": "HYD-OIL-ISO46-20L", "description": "Hydraulic oil ISO 46, 20L drum", "qty_on_hand": 4}
+        ]
+      }
+    ],
+    "question": "hydraulic_01 is overheating and has milky fluid. Last filter change was December. What is the root cause and what should I do?",
+    "key_synthesis_points": [
+      "milky fluid indicates water ingress or emulsification per SOP-MAINT-002",
+      "SOP-MAINT-002 requires immediate fluid drain and replacement — not deferrable",
+      "overheating (up to 74.5 C vs 65 C normal max) is consistent with contaminated fluid degrading lubrication",
+      "NAS Class 8 contamination from November WO-2023-1105 suggests ongoing contamination risk",
+      "4 drums HYD-OIL-ISO46-20L are on hand — parts available for immediate fluid change",
+      "root cause is water contamination; cooling system should also be inspected for leak source"
+    ]
+  },
+  {
+    "id": "ia4-004",
+    "situation": "Line-3 overall equipment effectiveness (OEE) dropped 12 percentage points in the last two days. Operations manager wants a root-cause explanation.",
+    "sources": [
+      {
+        "source_type": "mes_production",
+        "asset_id": "line_3",
+        "metric": "oee_percent",
+        "daily": [
+          {"date": "2024-01-11", "oee": 81.2},
+          {"date": "2024-01-12", "oee": 79.8},
+          {"date": "2024-01-13", "oee": 71.5},
+          {"date": "2024-01-14", "oee": 69.3}
+        ],
+        "target_oee": 80.0
+      },
+      {
+        "source_type": "mes_downtime",
+        "asset_id": "line_3",
+        "downtime_events": [
+          {"start": "2024-01-13T08:14:00Z", "duration_min": 47, "reason": "motor_01 vibration trip"},
+          {"start": "2024-01-13T14:22:00Z", "duration_min": 23, "reason": "motor_01 thermal protection trip"},
+          {"start": "2024-01-14T07:55:00Z", "duration_min": 38, "reason": "motor_01 vibration trip"}
+        ]
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "vibration_rms_mm_s",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-13T08:00:00Z", "value": 5.8},
+          {"timestamp_utc": "2024-01-14T07:50:00Z", "value": 6.2}
+        ],
+        "trip_threshold": 5.5
+      },
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "motor_01",
+        "open_work_orders": [
+          {
+            "wo_id": "WO-2024-0110",
+            "type": "corrective",
+            "description": "Elevated vibration — investigate bearing condition",
+            "status": "open",
+            "raised_date": "2024-01-10",
+            "priority": "medium"
+          }
+        ]
+      }
+    ],
+    "question": "Line-3 OEE has dropped from 81% to 69% in two days. What is causing it and what is the recommended corrective action?",
+    "key_synthesis_points": [
+      "OEE drop correlates directly with motor_01 vibration trip events causing 108 minutes total downtime over 2 days",
+      "motor_01 vibration RMS readings of 5.8 and 6.2 mm/s exceed the 5.5 mm/s trip threshold",
+      "open CMMS WO-2024-0110 for motor_01 bearing investigation has not been actioned since January 10",
+      "root cause: deteriorating motor_01 drive-end bearing causing repeated trips",
+      "recommended action: escalate WO-2024-0110 to high priority and schedule immediate bearing replacement",
+      "bearing replacement will restore OEE by eliminating the trip-induced downtime"
+    ]
+  },
+  {
+    "id": "ia4-005",
+    "situation": "press_01 tooling life counter shows 95% utilization, and the MES performance index has been declining since last Monday.",
+    "sources": [
+      {
+        "source_type": "mes_production",
+        "asset_id": "press_01",
+        "metrics": {
+          "tooling_life_pct_used": 95,
+          "performance_index": [
+            {"date": "2024-01-08", "value": 0.96},
+            {"date": "2024-01-09", "value": 0.94},
+            {"date": "2024-01-10", "value": 0.91},
+            {"date": "2024-01-11", "value": 0.88},
+            {"date": "2024-01-12", "value": 0.84}
+          ],
+          "tooling_life_max_strokes": 500000,
+          "strokes_to_date": 475000
+        }
+      },
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "press_01",
+        "records": [
+          {
+            "wo_id": "WO-2023-0401",
+            "type": "preventive",
+            "description": "Tool set replacement at 500K stroke interval",
+            "last_completed_date": "2023-04-01",
+            "strokes_at_replacement": 0
+          }
+        ]
+      },
+      {
+        "source_type": "erp_parts_inventory",
+        "asset_id": "press_01",
+        "parts": [
+          {"part_number": "TOOL-PRESS01-SET-A", "description": "Press_01 tool set A (punch and die)", "qty_on_hand": 1, "lead_time_days": 14}
+        ]
+      },
+      {
+        "source_type": "sop_excerpt",
+        "document_id": "SOP-MAINT-003",
+        "section": "Section 4 — Tooling Change Interval",
+        "text": "Replace tooling at 500,000 strokes or when performance index falls below 0.85. Allow 2-shift change-over window. Inspect die pocket for wear marks before installing new set."
+      }
+    ],
+    "question": "Press_01 tooling is at 95% life and performance is declining. We have one tool set in stock with a 14-day lead time. What should we do?",
+    "key_synthesis_points": [
+      "tooling at 95% of 500,000 stroke life with 475,000 strokes to date — 25,000 strokes remaining",
+      "performance index has declined from 0.96 to 0.84, crossing the SOP-MAINT-003 trigger threshold of 0.85",
+      "SOP-MAINT-003 requires tooling replacement at performance index below 0.85",
+      "one tool set in stock (TOOL-PRESS01-SET-A) — no immediate parts shortage",
+      "lead time is 14 days, so a replacement order should be placed now to avoid stockout",
+      "recommended action: schedule tooling change within the next 2 shifts per SOP-MAINT-003; order replacement to replenish stock"
+    ]
+  },
+  {
+    "id": "ia4-006",
+    "situation": "motor_01 energy consumption spiked 18% this week versus the same week last month, but throughput is unchanged.",
+    "sources": [
+      {
+        "source_type": "erp_energy",
+        "asset_id": "motor_01",
+        "metric": "energy_kwh",
+        "weekly_comparison": [
+          {"week": "2023-W49", "kwh": 1820, "throughput_units": 9450},
+          {"week": "2023-W50", "kwh": 1830, "throughput_units": 9480},
+          {"week": "2024-W01", "kwh": 1825, "throughput_units": 9410},
+          {"week": "2024-W02", "kwh": 2152, "throughput_units": 9390}
+        ]
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "current_amps",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-08T08:00:00Z", "value": 14.2},
+          {"timestamp_utc": "2024-01-09T08:00:00Z", "value": 14.5},
+          {"timestamp_utc": "2024-01-10T08:00:00Z", "value": 15.8},
+          {"timestamp_utc": "2024-01-11T08:00:00Z", "value": 17.1},
+          {"timestamp_utc": "2024-01-12T08:00:00Z", "value": 17.9}
+        ],
+        "rated_current_amps": 15.0
+      },
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "motor_01",
+        "records": [
+          {
+            "wo_id": "WO-2023-1228",
+            "type": "corrective",
+            "description": "Belt tension check and adjustment — belt found 12% slack",
+            "completed_date": "2023-12-28"
+          }
+        ]
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "vibration_rms_mm_s",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-12T08:00:00Z", "value": 3.8}
+        ],
+        "normal_range": {"min": 0.5, "max": 4.5}
+      }
+    ],
+    "question": "motor_01 energy use is up 18% this week but output is the same. Current draw is also high. What is wrong and what needs to be done?",
+    "key_synthesis_points": [
+      "energy spike of 18% (1825 to 2152 kWh) with no throughput change indicates increased mechanical load",
+      "current draw has risen from 14.2 A to 17.9 A — exceeding rated current of 15.0 A",
+      "vibration RMS is 3.8 mm/s, within normal range — bearing deterioration is not the primary cause",
+      "previous WO-2023-1228 corrected belt tension in December; belt re-tension or replacement should be re-evaluated",
+      "over-current condition risks motor insulation damage if sustained",
+      "recommended action: inspect belt condition and alignment; re-check tension and sheave wear; schedule motor current test"
+    ]
+  },
+  {
+    "id": "ia4-007",
+    "situation": "hydraulic_01 pressure regulator was replaced yesterday; technician wants confirmation that post-maintenance checks are complete before returning the unit to service.",
+    "sources": [
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "hydraulic_01",
+        "records": [
+          {
+            "wo_id": "WO-2024-0114",
+            "type": "corrective",
+            "description": "Pressure regulator replacement — PRV-HYD01-3A",
+            "completed_date": "2024-01-14",
+            "technician": "M. Okafor",
+            "sign_off": "pending"
+          }
+        ]
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "hydraulic_01",
+        "signal": "pressure_bar",
+        "post_maintenance_readings": [
+          {"timestamp_utc": "2024-01-14T15:00:00Z", "value": 201.5},
+          {"timestamp_utc": "2024-01-14T15:30:00Z", "value": 200.8},
+          {"timestamp_utc": "2024-01-14T16:00:00Z", "value": 200.2}
+        ],
+        "acceptance_spec": {"min": 195.0, "max": 205.0}
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "hydraulic_01",
+        "signal": "oil_temperature_celsius",
+        "post_maintenance_readings": [
+          {"timestamp_utc": "2024-01-14T15:00:00Z", "value": 52.1},
+          {"timestamp_utc": "2024-01-14T15:30:00Z", "value": 53.4},
+          {"timestamp_utc": "2024-01-14T16:00:00Z", "value": 54.0}
+        ],
+        "normal_max": 65.0
+      },
+      {
+        "source_type": "sop_excerpt",
+        "document_id": "SOP-MAINT-002",
+        "section": "Section 7 — Return-to-Service Checklist",
+        "text": "After regulator replacement: 1) Run system at idle for 30 minutes. 2) Verify pressure within 195–205 bar. 3) Verify oil temperature below 65 degrees C. 4) Check for leaks at all fittings. 5) Obtain supervisor sign-off before resuming production."
+      }
+    ],
+    "question": "The pressure regulator on hydraulic_01 was replaced yesterday. Telemetry looks stable. Is it safe to return to service?",
+    "key_synthesis_points": [
+      "pressure readings post-maintenance are 201.5, 200.8, 200.2 bar — all within the 195-205 bar acceptance spec",
+      "oil temperature post-maintenance is 52-54 degrees C — within the 65 C maximum",
+      "SOP-MAINT-002 return-to-service checklist requires 30-minute idle run (appears complete from timestamps)",
+      "SOP-MAINT-002 requires physical leak check at all fittings — cannot be verified from telemetry alone",
+      "supervisor sign-off on WO-2024-0114 is still pending — required before returning to production",
+      "recommendation: confirm physical leak inspection was done; obtain supervisor sign-off then clear for production"
+    ]
+  },
+  {
+    "id": "ia4-008",
+    "situation": "Line-1 throughput dropped 15% at the start of the morning shift. Maintenance has no open work orders for Line-1 assets.",
+    "sources": [
+      {
+        "source_type": "mes_production",
+        "asset_id": "line_1",
+        "metric": "throughput_units_per_hour",
+        "readings": [
+          {"timestamp_utc": "2024-01-15T05:00:00Z", "value": 425},
+          {"timestamp_utc": "2024-01-15T06:00:00Z", "value": 389},
+          {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 362},
+          {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 361}
+        ],
+        "baseline_throughput_per_hour": 425
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "speed_rpm",
+        "readings": [
+          {"timestamp_utc": "2024-01-15T05:55:00Z", "value": 1490},
+          {"timestamp_utc": "2024-01-15T06:05:00Z", "value": 1452},
+          {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 1449},
+          {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 1451}
+        ],
+        "rated_speed_rpm": 1490
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "vibration_rms_mm_s",
+        "readings": [
+          {"timestamp_utc": "2024-01-15T05:55:00Z", "value": 1.9},
+          {"timestamp_utc": "2024-01-15T06:05:00Z", "value": 2.1},
+          {"timestamp_utc": "2024-01-15T07:00:00Z", "value": 2.0},
+          {"timestamp_utc": "2024-01-15T08:00:00Z", "value": 2.1}
+        ]
+      },
+      {
+        "source_type": "erp_shift_log",
+        "asset_id": "line_1",
+        "entries": [
+          {
+            "timestamp_utc": "2024-01-15T05:58:00Z",
+            "operator": "R. Patel",
+            "entry": "VFD speed setpoint reduced from 50 Hz to 48.6 Hz per line leader instruction for quality trial."
+          }
+        ]
+      }
+    ],
+    "question": "Line-1 throughput dropped 15% at shift start with no maintenance issues. What happened and what should be done?",
+    "key_synthesis_points": [
+      "throughput drop from 425 to ~361 units/hour is approximately 15%, matching the symptom",
+      "motor_01 speed dropped from rated 1490 RPM to 1451 RPM at shift start",
+      "ERP shift log shows VFD setpoint was intentionally reduced from 50 Hz to 48.6 Hz at 05:58 by operator",
+      "vibration levels are normal (2.0-2.1 mm/s) — no mechanical fault",
+      "root cause is an intentional speed reduction for a quality trial, not a maintenance fault",
+      "recommended action: confirm quality trial status with line leader; restore VFD to 50 Hz if trial is complete"
+    ]
+  },
+  {
+    "id": "ia4-009",
+    "situation": "Preventive maintenance is due on motor_01 next week, but the shift supervisor wants to know if it is safe to defer one week given current sensor readings.",
+    "sources": [
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "motor_01",
+        "records": [
+          {
+            "wo_id": "WO-SCHED-2024-0120",
+            "type": "preventive",
+            "description": "Quarterly PM — lubrication, belt inspection, electrical check",
+            "scheduled_date": "2024-01-20",
+            "interval_days": 90,
+            "last_completed_date": "2023-10-22"
+          }
+        ]
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "vibration_rms_mm_s",
+        "trend_7day": [
+          {"date": "2024-01-09", "value": 1.8},
+          {"date": "2024-01-10", "value": 1.9},
+          {"date": "2024-01-11", "value": 1.9},
+          {"date": "2024-01-12", "value": 2.0},
+          {"date": "2024-01-13", "value": 2.0},
+          {"date": "2024-01-14", "value": 2.1},
+          {"date": "2024-01-15", "value": 2.1}
+        ],
+        "alert_threshold": 4.5,
+        "trip_threshold": 5.5
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "temperature_celsius",
+        "trend_7day": [
+          {"date": "2024-01-09", "value": 68.2},
+          {"date": "2024-01-10", "value": 68.5},
+          {"date": "2024-01-11", "value": 68.9},
+          {"date": "2024-01-12", "value": 69.1},
+          {"date": "2024-01-13", "value": 69.0},
+          {"date": "2024-01-14", "value": 69.3},
+          {"date": "2024-01-15", "value": 69.8}
+        ],
+        "normal_max": 80.0
+      },
+      {
+        "source_type": "sop_excerpt",
+        "document_id": "SOP-MAINT-001",
+        "section": "Section 5 — PM Deferral Policy",
+        "text": "Quarterly PM may be deferred up to 14 calendar days if all monitored parameters are within normal range and no active corrective work orders exist. Deferral must be documented in CMMS with shift supervisor approval."
+      }
+    ],
+    "question": "Motor_01 quarterly PM is scheduled for January 20. Can we defer it by one week to January 27? What do the sensors say?",
+    "key_synthesis_points": [
+      "vibration RMS is 2.1 mm/s — well below the 4.5 mm/s alert threshold",
+      "temperature is 69.8 degrees C — within the 80 C normal maximum",
+      "no active corrective work orders for motor_01",
+      "SOP-MAINT-001 permits PM deferral up to 14 calendar days when parameters are within range and no active corrective WOs exist",
+      "deferral to January 27 is 7 days — within the 14-day deferral limit",
+      "action: deferral is acceptable per SOP; supervisor must document in CMMS with approval"
+    ]
+  },
+  {
+    "id": "ia4-010",
+    "situation": "An operator noticed press_01 is leaving small burrs on stamped parts. Quality just rejected a batch. No alarm has been triggered.",
+    "sources": [
+      {
+        "source_type": "mes_quality",
+        "asset_id": "press_01",
+        "quality_events": [
+          {
+            "date": "2024-01-14",
+            "batch_id": "BATCH-2024-0114-C",
+            "defect_type": "burr_on_edge",
+            "reject_count": 42,
+            "total_inspected": 200,
+            "defect_rate_pct": 21.0
+          }
+        ]
+      },
+      {
+        "source_type": "mes_production",
+        "asset_id": "press_01",
+        "metrics": {
+          "tooling_life_pct_used": 88,
+          "strokes_to_date": 440000,
+          "tooling_life_max_strokes": 500000
+        }
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "press_01",
+        "signal": "punch_force_kn",
+        "recent_readings": [
+          {"timestamp_utc": "2024-01-14T10:00:00Z", "value": 87.2},
+          {"timestamp_utc": "2024-01-14T11:00:00Z", "value": 86.9},
+          {"timestamp_utc": "2024-01-14T12:00:00Z", "value": 86.5}
+        ],
+        "nominal_force_kn": 90.0,
+        "acceptable_range_kn": {"min": 88.0, "max": 92.0}
+      },
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "press_01",
+        "open_work_orders": []
+      }
+    ],
+    "question": "Press_01 is producing burrs and a batch was rejected. No alarms have fired. What is the cause and what action do I take?",
+    "key_synthesis_points": [
+      "21% defect rate in BATCH-2024-0114-C — significant quality escape",
+      "punch force has dropped to 86.5-87.2 kN, below the 88.0 kN lower acceptance limit",
+      "reduced punch force combined with 88% tooling life (440K/500K strokes) indicates die wear",
+      "burrs on stamped parts are a classic sign of worn or misaligned punch/die clearance",
+      "no active CMMS work order exists — this event requires a new corrective WO",
+      "recommended action: stop production on press_01; raise urgent corrective WO for die inspection and tooling change; quarantine BATCH-2024-0114-C for 100% re-inspection"
+    ]
+  },
+  {
+    "id": "ia4-011",
+    "situation": "Both motor_01 and hydraulic_01 are showing correlated thermal events at the same time each day, suggesting a shared root cause on Line-1.",
+    "sources": [
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "temperature_celsius",
+        "pattern": "peaks daily at 10:00–11:00 and 14:00–15:00",
+        "peak_readings": [
+          {"timestamp_utc": "2024-01-12T10:15:00Z", "value": 83.2},
+          {"timestamp_utc": "2024-01-12T14:10:00Z", "value": 82.9},
+          {"timestamp_utc": "2024-01-13T10:12:00Z", "value": 84.1},
+          {"timestamp_utc": "2024-01-13T14:05:00Z", "value": 83.6}
+        ],
+        "normal_max": 80.0
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "hydraulic_01",
+        "signal": "oil_temperature_celsius",
+        "pattern": "same peak windows as motor_01",
+        "peak_readings": [
+          {"timestamp_utc": "2024-01-12T10:18:00Z", "value": 66.8},
+          {"timestamp_utc": "2024-01-12T14:13:00Z", "value": 67.1},
+          {"timestamp_utc": "2024-01-13T10:15:00Z", "value": 67.5},
+          {"timestamp_utc": "2024-01-13T14:08:00Z", "value": 67.9}
+        ],
+        "normal_max": 65.0
+      },
+      {
+        "source_type": "erp_shift_log",
+        "asset_id": "line_1",
+        "entries": [
+          {"timestamp_utc": "2024-01-12T10:00:00Z", "entry": "Line-1 running double-shift peak production — all assets at 100% load"},
+          {"timestamp_utc": "2024-01-12T14:00:00Z", "entry": "Second peak production window begins — Line-1 full speed"}
+        ]
+      },
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "line_1",
+        "open_work_orders": [
+          {
+            "wo_id": "WO-2024-0108",
+            "type": "preventive",
+            "description": "Line-1 cooling fan inspection — fan coil fouling suspected",
+            "status": "open",
+            "raised_date": "2024-01-08",
+            "priority": "low"
+          }
+        ]
+      }
+    ],
+    "question": "Both motor_01 and hydraulic_01 overheat at the same time daily. No individual alarms are helping. What is the system-level cause?",
+    "key_synthesis_points": [
+      "thermal peaks on both motor_01 (83-84 C vs 80 C max) and hydraulic_01 (67-68 C vs 65 C max) are time-correlated",
+      "ERP shift logs show the peak windows match double-shift peak production at 100% asset load",
+      "the correlated pattern points to a shared infrastructure constraint, not individual asset faults",
+      "open CMMS WO-2024-0108 notes suspected cooling fan coil fouling — insufficient cooling capacity under peak load",
+      "root cause: inadequate cooling system capacity or fouled heat exchangers during peak load periods",
+      "recommended action: escalate WO-2024-0108 to high priority; inspect and clean cooling coils; evaluate load scheduling to reduce simultaneous peak demand"
+    ]
+  },
+  {
+    "id": "ia4-012",
+    "situation": "Maintenance planner needs to prioritize three competing work orders for the upcoming weekend shutdown: WO-A (motor_01 PM), WO-B (hydraulic_01 filter), WO-C (press_01 tooling inspection). Only 8 labour-hours are available.",
+    "sources": [
+      {
+        "source_type": "cmms_work_orders",
+        "asset_id": "multiple",
+        "open_work_orders": [
+          {
+            "wo_id": "WO-A",
+            "asset": "motor_01",
+            "type": "preventive",
+            "description": "Quarterly PM — lubrication, belt inspection",
+            "estimated_hours": 3.0,
+            "due_date": "2024-01-20",
+            "overdue_days": 0
+          },
+          {
+            "wo_id": "WO-B",
+            "asset": "hydraulic_01",
+            "type": "preventive",
+            "description": "Hydraulic filter replacement — 14 days overdue",
+            "estimated_hours": 1.5,
+            "due_date": "2024-01-01",
+            "overdue_days": 14
+          },
+          {
+            "wo_id": "WO-C",
+            "asset": "press_01",
+            "type": "corrective",
+            "description": "Tooling inspection after quality escape — urgent",
+            "estimated_hours": 4.0,
+            "due_date": "2024-01-15",
+            "overdue_days": 0
+          }
+        ]
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "hydraulic_01",
+        "signal": "pressure_bar",
+        "current_value": 189.0,
+        "normal_range": {"min": 195.0, "max": 205.0},
+        "note": "Pressure below normal — filter restriction likely"
+      },
+      {
+        "source_type": "mes_quality",
+        "asset_id": "press_01",
+        "note": "Quality escape active — press_01 on hold pending tooling inspection"
+      },
+      {
+        "source_type": "telemetry",
+        "asset_id": "motor_01",
+        "signal": "vibration_rms_mm_s",
+        "current_value": 2.1,
+        "alert_threshold": 4.5,
+        "note": "Within normal range — PM is scheduled not urgent"
+      }
+    ],
+    "question": "I have 8 labour-hours for the weekend shutdown and three work orders: motor_01 PM (3h), hydraulic_01 filter (1.5h), press_01 tooling (4h). Which do I do?",
+    "key_synthesis_points": [
+      "total estimated hours for all three WOs is 8.5 h, exceeding the 8 h available — cannot complete all three",
+      "press_01 tooling WO-C is corrective triggered by a quality escape — press_01 is on production hold and must be resolved first (4.0 h)",
+      "hydraulic_01 filter WO-B is 14 days overdue and pressure is below normal at 189 bar — safety and production risk (1.5 h)",
+      "WO-C (4 h) + WO-B (1.5 h) = 5.5 h total — fits within 8 h budget",
+      "motor_01 PM WO-A is not overdue and vibration is normal at 2.1 mm/s — deferral is low risk",
+      "recommended priority: complete WO-C and WO-B this weekend; defer WO-A to next available window per SOP PM deferral policy"
+    ]
+  }
+]
