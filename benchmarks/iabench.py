@@ -28,6 +28,7 @@ from __future__ import annotations
 import datetime
 import json
 import math
+import re
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -97,6 +98,37 @@ def _ndcg_at_5(retrieved: list[str], qrels: dict[str, int]) -> float:
     ideal_rels = sorted(qrels.values(), reverse=True)[:5]
     idcg = sum(rel / math.log2(rank + 2) for rank, rel in enumerate(ideal_rels))
     return dcg / idcg if idcg > 0.0 else 0.0
+
+
+# ---------------------------------------------------------------------------
+# Shared judge helper — extract JSON from prose / markdown-fenced LLM output
+# ---------------------------------------------------------------------------
+
+
+def _extract_json_block(raw: str) -> str:
+    """Extract the first complete JSON object from raw LLM output.
+
+    Handles three common wrapping patterns:
+      1. Plain JSON (returned as-is after stripping whitespace)
+      2. Markdown code fence: ```json ... ``` or ``` ... ```
+      3. JSON embedded in prose (finds first '{' and matches closing '}')
+    """
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw)
+    start = raw.find("{")
+    if start == -1:
+        return raw
+    depth = 0
+    for i in range(start, len(raw)):
+        if raw[i] == "{":
+            depth += 1
+        elif raw[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return raw[start : i + 1]
+    return raw[start:]
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +207,7 @@ async def _judge_hallucination(
             (b["text"] for b in response.get("content", []) if b.get("type") == "text"),
             "{}",
         )
-        parsed = json.loads(raw)
+        parsed = json.loads(_extract_json_block(raw))
         verdict: dict[str, Any] = parsed if isinstance(parsed, dict) else {}
         # Ensure required keys have defaults
         verdict.setdefault("recall", 0.0)
@@ -962,7 +994,7 @@ async def _judge_synthesis_rubric(
             (b["text"] for b in response.get("content", []) if b.get("type") == "text"),
             "{}",
         )
-        parsed = json.loads(raw)
+        parsed = json.loads(_extract_json_block(raw))
         verdict: dict[str, Any] = parsed if isinstance(parsed, dict) else {}
         for dim in ("factual_accuracy", "source_coverage", "actionability", "safety_adherence"):
             verdict.setdefault(dim, 1)
@@ -1155,10 +1187,11 @@ class _TokenTracker:
             max_tokens=max_tokens,
             tools=tools,
         )
-        usage = response.get("usage", {})
+        result: dict[str, Any] = response if isinstance(response, dict) else {}
+        usage = result.get("usage", {})
         self.input_tokens += usage.get("input_tokens", 0)
         self.output_tokens += usage.get("output_tokens", 0)
-        return response
+        return result
 
 
 def _estimate_tokens_from_messages(messages: list[dict[str, Any]]) -> int:
@@ -1172,7 +1205,8 @@ def _load_pricing_table() -> dict[str, Any]:
     pricing_path = Path(__file__).parent / "data" / "llm_pricing.json"
     with open(pricing_path) as f:
         data = json.load(f)
-    return data.get("models", {})  # type: ignore[no-any-return]
+    result = data.get("models", {})
+    return result if isinstance(result, dict) else {}
 
 
 def _lookup_model_price(pricing: dict[str, Any], model: str) -> tuple[float, float]:

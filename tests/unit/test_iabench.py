@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+from unittest.mock import AsyncMock
 
 import pytest
 from benchmarks.iabench import (
@@ -10,6 +12,9 @@ from benchmarks.iabench import (
     BenchmarkSuite,
     _compute_rubric_score,
     _estimate_tokens_from_messages,
+    _extract_json_block,
+    _judge_hallucination,
+    _judge_synthesis_rubric,
     _load_pricing_table,
     _lookup_model_price,
     _make_anomaly_dataset,
@@ -483,3 +488,179 @@ class TestPricingTable:
         out_price = 0.0
         usd = (10000 * in_price + 5000 * out_price) / 1_000_000
         assert usd == 0.0
+
+
+class TestExtractJsonBlock:
+    def test_plain_json_unchanged(self) -> None:
+        raw = '{"key": "value"}'
+        assert _extract_json_block(raw) == '{"key": "value"}'
+
+    def test_strips_markdown_fence(self) -> None:
+        raw = '```json\n{"key": "value"}\n```'
+        result = _extract_json_block(raw)
+        assert json.loads(result) == {"key": "value"}
+
+    def test_strips_bare_fence(self) -> None:
+        raw = '```\n{"key": "value"}\n```'
+        result = _extract_json_block(raw)
+        assert json.loads(result) == {"key": "value"}
+
+    def test_extracts_json_from_prose(self) -> None:
+        raw = 'Here is my evaluation:\n{"score": 4, "note": "good"}\nThat is all.'
+        result = _extract_json_block(raw)
+        assert json.loads(result) == {"score": 4, "note": "good"}
+
+    def test_nested_braces(self) -> None:
+        raw = '{"outer": {"inner": 1}}'
+        result = _extract_json_block(raw)
+        assert json.loads(result) == {"outer": {"inner": 1}}
+
+    def test_no_json_returns_raw(self) -> None:
+        raw = "No JSON here at all."
+        result = _extract_json_block(raw)
+        assert result == raw.strip()
+
+
+def _make_mock_llm(response_text: str, input_tok: int = 50, output_tok: int = 30) -> AsyncMock:
+    """Return an AsyncMock LLM that returns fixed JSON text and token counts."""
+    mock = AsyncMock()
+    mock.complete.return_value = {
+        "content": [{"type": "text", "text": response_text}],
+        "usage": {"input_tokens": input_tok, "output_tokens": output_tok},
+    }
+    return mock
+
+
+class TestJudgeSynthesisRubric:
+    """Tests for _judge_synthesis_rubric — assert scoring logic with mocked LLM."""
+
+    def test_parses_valid_json_response(self) -> None:
+        verdict_json = json.dumps(
+            {
+                "factual_accuracy": 4,
+                "source_coverage": 3,
+                "actionability": 5,
+                "safety_adherence": 4,
+                "overall_score": 4.0,
+                "explanation": "Good answer",
+            }
+        )
+        llm = _make_mock_llm(verdict_json)
+        scenario = {
+            "situation": "Motor running hot",
+            "sources": [{"source_type": "telemetry", "asset_id": "motor_01"}],
+            "question": "What should I do?",
+            "key_synthesis_points": ["Check temperature trend"],
+        }
+        result = asyncio.run(_judge_synthesis_rubric(llm, None, scenario, "Shut down the motor."))
+        assert result["factual_accuracy"] == 4
+        assert result["source_coverage"] == 3
+        assert result["overall_score"] == pytest.approx(4.0)
+        assert "judge_error" not in result
+
+    def test_handles_fenced_json(self) -> None:
+        inner = json.dumps(
+            {
+                "factual_accuracy": 5,
+                "source_coverage": 5,
+                "actionability": 5,
+                "safety_adherence": 5,
+                "overall_score": 5.0,
+                "explanation": "Perfect",
+            }
+        )
+        verdict_json = f"```json\n{inner}\n```"
+        llm = _make_mock_llm(verdict_json)
+        scenario = {"situation": "s", "sources": [], "question": "q", "key_synthesis_points": []}
+        result = asyncio.run(_judge_synthesis_rubric(llm, None, scenario, "answer"))
+        assert result["factual_accuracy"] == 5
+        assert "judge_error" not in result
+
+    def test_sets_missing_dimensions_to_one(self) -> None:
+        verdict_json = json.dumps({"factual_accuracy": 3, "explanation": "partial"})
+        llm = _make_mock_llm(verdict_json)
+        scenario = {"situation": "s", "sources": [], "question": "q", "key_synthesis_points": []}
+        result = asyncio.run(_judge_synthesis_rubric(llm, None, scenario, "answer"))
+        assert result["source_coverage"] == 1
+        assert result["actionability"] == 1
+        assert result["safety_adherence"] == 1
+
+    def test_judge_error_on_unparseable_response(self) -> None:
+        llm = _make_mock_llm("This is not JSON at all, just prose with no braces.")
+        scenario = {"situation": "s", "sources": [], "question": "q", "key_synthesis_points": []}
+        result = asyncio.run(_judge_synthesis_rubric(llm, None, scenario, "answer"))
+        assert result.get("judge_error") is True
+
+    def test_passes_judge_model_to_llm(self) -> None:
+        verdict_json = json.dumps(
+            {"factual_accuracy": 4, "source_coverage": 4, "actionability": 4, "safety_adherence": 4}
+        )
+        llm = _make_mock_llm(verdict_json)
+        scenario = {"situation": "s", "sources": [], "question": "q", "key_synthesis_points": []}
+        asyncio.run(_judge_synthesis_rubric(llm, "llama3.1:70b", scenario, "answer"))
+        llm.complete.assert_called_once()
+        _, kwargs = llm.complete.call_args
+        assert kwargs["model"] == "llama3.1:70b"
+
+
+class TestJudgeHallucination:
+    """Tests for _judge_hallucination — assert parsing and error handling with mocked LLM."""
+
+    def test_parses_valid_json_response(self) -> None:
+        verdict_json = json.dumps(
+            {
+                "recall": 0.8,
+                "has_hallucination": False,
+                "hallucinations_detected": [],
+                "explanation": "Mostly correct",
+            }
+        )
+        llm = _make_mock_llm(verdict_json)
+        result = asyncio.run(_judge_hallucination(llm, None, "question", "answer", ["fact1"], []))
+        assert result["recall"] == pytest.approx(0.8)
+        assert result["has_hallucination"] is False
+        assert "judge_error" not in result
+
+    def test_handles_fenced_json(self) -> None:
+        inner = json.dumps(
+            {
+                "recall": 1.0,
+                "has_hallucination": False,
+                "hallucinations_detected": [],
+                "explanation": "ok",
+            }
+        )
+        verdict_json = f"```json\n{inner}\n```"
+        llm = _make_mock_llm(verdict_json)
+        result = asyncio.run(_judge_hallucination(llm, None, "question", "answer", [], []))
+        assert result["recall"] == pytest.approx(1.0)
+        assert "judge_error" not in result
+
+    def test_judge_error_on_unparseable_response(self) -> None:
+        llm = _make_mock_llm("Sorry, I cannot evaluate this.")
+        result = asyncio.run(_judge_hallucination(llm, None, "question", "answer", [], []))
+        assert result.get("judge_error") is True
+        assert result["recall"] == pytest.approx(0.0)
+
+    def test_sets_default_keys_on_missing_fields(self) -> None:
+        verdict_json = json.dumps({"recall": 0.5})
+        llm = _make_mock_llm(verdict_json)
+        result = asyncio.run(_judge_hallucination(llm, None, "question", "answer", [], []))
+        assert "has_hallucination" in result
+        assert "hallucinations_detected" in result
+        assert "explanation" in result
+
+    def test_passes_judge_model_to_llm(self) -> None:
+        verdict_json = json.dumps(
+            {
+                "recall": 1.0,
+                "has_hallucination": False,
+                "hallucinations_detected": [],
+                "explanation": "",
+            }
+        )
+        llm = _make_mock_llm(verdict_json)
+        asyncio.run(_judge_hallucination(llm, "claude-sonnet-4-6", "question", "answer", [], []))
+        llm.complete.assert_called_once()
+        _, kwargs = llm.complete.call_args
+        assert kwargs["model"] == "claude-sonnet-4-6"
