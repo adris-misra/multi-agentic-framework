@@ -1,0 +1,162 @@
+[
+  {
+    "case_id": "r001",
+    "description": "high-confidence reversible telemetry read, zone 3",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "purdue_zone": 3,
+    "expected_routing": "auto_proceed"
+  },
+  {
+    "case_id": "r002",
+    "description": "high-confidence reversible enterprise data query, zone 4",
+    "confidence": 0.92,
+    "reversibility": "reversible",
+    "purdue_zone": 4,
+    "expected_routing": "auto_proceed"
+  },
+  {
+    "case_id": "r003",
+    "description": "high-confidence reversible SCADA read at zone boundary, zone 2",
+    "confidence": 0.90,
+    "reversibility": "reversible",
+    "purdue_zone": 2,
+    "expected_routing": "auto_proceed"
+  },
+  {
+    "case_id": "r004",
+    "description": "high-confidence soft-reversible process parameter query, zone 3",
+    "confidence": 0.95,
+    "reversibility": "soft",
+    "purdue_zone": 3,
+    "expected_routing": "auto_proceed"
+  },
+  {
+    "case_id": "r005",
+    "description": "high-confidence soft-reversible schedule adjustment, zone 4",
+    "confidence": 0.88,
+    "reversibility": "soft",
+    "purdue_zone": 4,
+    "expected_routing": "auto_proceed"
+  },
+  {
+    "case_id": "r006",
+    "description": "confidence exactly at threshold, reversible, zone 3",
+    "confidence": 0.85,
+    "reversibility": "reversible",
+    "purdue_zone": 3,
+    "expected_routing": "auto_proceed"
+  },
+  {
+    "case_id": "r007",
+    "description": "moderate-confidence reversible sensor read — below threshold, zone 3",
+    "confidence": 0.80,
+    "reversibility": "reversible",
+    "purdue_zone": 3,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r008",
+    "description": "moderate-confidence reversible data lookup, zone 4",
+    "confidence": 0.65,
+    "reversibility": "reversible",
+    "purdue_zone": 4,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r009",
+    "description": "moderate-confidence reversible SCADA read, zone 2",
+    "confidence": 0.75,
+    "reversibility": "reversible",
+    "purdue_zone": 2,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r010",
+    "description": "moderate-confidence soft-reversible parameter change, zone 3",
+    "confidence": 0.80,
+    "reversibility": "soft",
+    "purdue_zone": 3,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r011",
+    "description": "low-confidence soft-reversible schedule change, zone 4",
+    "confidence": 0.60,
+    "reversibility": "soft",
+    "purdue_zone": 4,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r012",
+    "description": "low-confidence reversible query, zone 3",
+    "confidence": 0.40,
+    "reversibility": "reversible",
+    "purdue_zone": 3,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r013",
+    "description": "very-low-confidence reversible data pull, zone 4",
+    "confidence": 0.20,
+    "reversibility": "reversible",
+    "purdue_zone": 4,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r014",
+    "description": "confidence just below threshold (0.84), reversible, zone 3",
+    "confidence": 0.84,
+    "reversibility": "reversible",
+    "purdue_zone": 3,
+    "expected_routing": "escalate"
+  },
+  {
+    "case_id": "r015",
+    "description": "high-confidence irreversible actuator command — safety interlock fires",
+    "confidence": 0.95,
+    "reversibility": "irreversible",
+    "purdue_zone": 3,
+    "expected_routing": "block"
+  },
+  {
+    "case_id": "r016",
+    "description": "moderate-confidence irreversible valve write — safety interlock fires",
+    "confidence": 0.75,
+    "reversibility": "irreversible",
+    "purdue_zone": 3,
+    "expected_routing": "block"
+  },
+  {
+    "case_id": "r017",
+    "description": "low-confidence irreversible PLC write — safety interlock fires",
+    "confidence": 0.30,
+    "reversibility": "irreversible",
+    "purdue_zone": 4,
+    "expected_routing": "block"
+  },
+  {
+    "case_id": "r018",
+    "description": "high-confidence reversible action targeting zone 1 — purdue zone violation",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "purdue_zone": 1,
+    "expected_routing": "block"
+  },
+  {
+    "case_id": "r019",
+    "description": "high-confidence reversible action targeting zone 0 — write-to-level0 rule",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "purdue_zone": 0,
+    "expected_routing": "block"
+  },
+  {
+    "case_id": "r020",
+    "description": "high-confidence soft-reversible action targeting zone 1 — purdue zone violation",
+    "confidence": 0.90,
+    "reversibility": "soft",
+    "purdue_zone": 1,
+    "expected_routing": "block"
+  }
+]

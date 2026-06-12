@@ -1,7 +1,7 @@
 # Industrial Agent Benchmark (IABENCH-v1)
 
-> **Status:** v1.0 — IA-1, IA-2, IA-3, and IA-5 fully implemented. IA-4, 6–7 are stubs
-> scheduled for PRs 3–5 of the `bench/iabench-*` series.
+> **Status:** v1.0 — IA-1, IA-2, IA-3, IA-5, and IA-7 fully implemented. IA-4 and IA-6 are
+> stubs scheduled for later PRs. IA-LIN remains a supplementary infra check.
 
 ## Overview
 
@@ -23,7 +23,7 @@ manufacturing-specific tasks. It is designed to be:
 | IA-4 | Multi-source synthesis | rubric 1–5 | 3.5 | 🔲 Stub (PR 3) |
 | IA-5 | Hallucination rate | % unsupported claims | ≤2% | ✅ Implemented |
 | IA-6 | Token-cost-per-decision | USD/invocation | informational | 🔲 Stub (PR 4) |
-| IA-7 | Mean-time-to-escalation | routing F1 | 0.80 | 🔲 Stub (PR 4) |
+| IA-7 | Mean-time-to-escalation | routing F1 | 0.80 | ✅ Implemented |
 
 ### Supplementary Check (not part of main suite)
 

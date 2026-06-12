@@ -6,8 +6,12 @@ import json
 
 import pytest
 from benchmarks.iabench import (
+    _IA7_HITL_THRESHOLD,
     BenchmarkResult,
     BenchmarkSuite,
+    _compute_macro_f1,
+    _evaluate_routing_policy,
+    _load_routing_cases,
     _make_anomaly_dataset,
     _make_stub,
     _ndcg_at_5,
@@ -281,3 +285,173 @@ class TestStubFactory:
         assert s["failed"] == 0
         assert s["not_implemented"] == 1
         assert s["total_tasks"] == 2
+
+
+# ---------------------------------------------------------------------------
+# IA-7 helpers
+# ---------------------------------------------------------------------------
+
+
+class TestEvaluateRoutingPolicy:
+    """Tests for _evaluate_routing_policy — deterministic routing from config."""
+
+    def test_high_conf_reversible_zone3_auto_proceed(self) -> None:
+        assert _evaluate_routing_policy(0.95, "reversible", 3) == "auto_proceed"
+
+    def test_high_conf_soft_zone4_auto_proceed(self) -> None:
+        assert _evaluate_routing_policy(0.90, "soft", 4) == "auto_proceed"
+
+    def test_confidence_exactly_at_threshold_auto_proceed(self) -> None:
+        assert _evaluate_routing_policy(_IA7_HITL_THRESHOLD, "reversible", 3) == "auto_proceed"
+
+    def test_confidence_just_below_threshold_escalates(self) -> None:
+        below = _IA7_HITL_THRESHOLD - 0.01
+        assert _evaluate_routing_policy(below, "reversible", 3) == "escalate"
+
+    def test_moderate_conf_reversible_escalates(self) -> None:
+        assert _evaluate_routing_policy(0.75, "reversible", 3) == "escalate"
+
+    def test_low_conf_reversible_escalates(self) -> None:
+        assert _evaluate_routing_policy(0.20, "reversible", 4) == "escalate"
+
+    def test_moderate_conf_soft_escalates(self) -> None:
+        assert _evaluate_routing_policy(0.80, "soft", 3) == "escalate"
+
+    def test_irreversible_high_conf_blocks(self) -> None:
+        assert _evaluate_routing_policy(0.95, "irreversible", 3) == "block"
+
+    def test_irreversible_low_conf_blocks(self) -> None:
+        assert _evaluate_routing_policy(0.20, "irreversible", 4) == "block"
+
+    def test_irreversible_takes_priority_over_low_conf(self) -> None:
+        # block wins over escalate — irreversibility checked first
+        assert _evaluate_routing_policy(0.10, "irreversible", 3) == "block"
+
+    def test_zone1_high_conf_reversible_blocks(self) -> None:
+        assert _evaluate_routing_policy(0.95, "reversible", 1) == "block"
+
+    def test_zone0_high_conf_reversible_blocks(self) -> None:
+        assert _evaluate_routing_policy(0.95, "reversible", 0) == "block"
+
+    def test_zone1_high_conf_soft_blocks(self) -> None:
+        assert _evaluate_routing_policy(0.90, "soft", 1) == "block"
+
+    def test_zone2_is_not_blocked_by_zone_rule(self) -> None:
+        # zone 2 is above the blocked-zone threshold
+        assert _evaluate_routing_policy(0.95, "reversible", 2) == "auto_proceed"
+
+    def test_threshold_constant_is_0_85(self) -> None:
+        assert pytest.approx(0.85) == _IA7_HITL_THRESHOLD
+
+
+class TestComputeMacroF1:
+    """Tests for _compute_macro_f1 — macro-averaged F1 across routing classes."""
+
+    def test_perfect_predictions_return_1_0(self) -> None:
+        preds = ["auto_proceed", "escalate", "block", "escalate", "block"]
+        truth = ["auto_proceed", "escalate", "block", "escalate", "block"]
+        f1, _ = _compute_macro_f1(preds, truth)
+        assert f1 == pytest.approx(1.0)
+
+    def test_all_wrong_return_0_0(self) -> None:
+        preds = ["block", "block", "block"]
+        truth = ["auto_proceed", "escalate", "auto_proceed"]
+        f1, _ = _compute_macro_f1(preds, truth)
+        assert f1 == pytest.approx(0.0)
+
+    def test_per_class_keys_present(self) -> None:
+        preds = ["auto_proceed", "escalate"]
+        truth = ["auto_proceed", "escalate"]
+        _, per_class = _compute_macro_f1(preds, truth)
+        assert set(per_class.keys()) == {"auto_proceed", "escalate", "block"}
+
+    def test_per_class_fields_present(self) -> None:
+        preds = ["auto_proceed"]
+        truth = ["auto_proceed"]
+        _, per_class = _compute_macro_f1(preds, truth)
+        cls = per_class["auto_proceed"]
+        assert "precision" in cls
+        assert "recall" in cls
+        assert "f1" in cls
+        assert "tp" in cls
+
+    def test_class_absent_from_predictions_contributes_zero_f1(self) -> None:
+        # "block" never predicted — its F1 should be 0
+        preds = ["auto_proceed", "escalate", "auto_proceed"]
+        truth = ["auto_proceed", "escalate", "block"]
+        f1, per_class = _compute_macro_f1(preds, truth)
+        assert per_class["block"]["f1"] == pytest.approx(0.0)
+        assert f1 < 1.0
+
+    def test_single_class_all_correct(self) -> None:
+        preds = ["escalate", "escalate", "escalate"]
+        truth = ["escalate", "escalate", "escalate"]
+        f1, per_class = _compute_macro_f1(preds, truth)
+        assert per_class["escalate"]["f1"] == pytest.approx(1.0)
+        # Other classes absent in both — P and R undefined → 0 for those classes
+        assert f1 == pytest.approx(1 / 3)
+
+    def test_macro_f1_is_mean_of_per_class(self) -> None:
+        preds = ["auto_proceed", "escalate", "block"]
+        truth = ["auto_proceed", "escalate", "block"]
+        f1, per_class = _compute_macro_f1(preds, truth)
+        expected = sum(per_class[c]["f1"] for c in per_class) / len(per_class)
+        assert f1 == pytest.approx(expected)
+
+
+class TestLoadRoutingCases:
+    """Tests for _load_routing_cases — JSON corpus loader."""
+
+    def test_returns_list(self) -> None:
+        cases = _load_routing_cases()
+        assert isinstance(cases, list)
+
+    def test_has_enough_cases(self) -> None:
+        cases = _load_routing_cases()
+        assert len(cases) >= 15
+
+    def test_required_fields_present(self) -> None:
+        cases = _load_routing_cases()
+        required = {"case_id", "confidence", "reversibility", "purdue_zone", "expected_routing"}
+        for case in cases:
+            assert required.issubset(case.keys()), f"Missing fields in {case['case_id']}"
+
+    def test_confidence_in_range(self) -> None:
+        cases = _load_routing_cases()
+        for case in cases:
+            assert 0.0 <= float(case["confidence"]) <= 1.0
+
+    def test_reversibility_valid_values(self) -> None:
+        valid = {"reversible", "soft", "irreversible"}
+        cases = _load_routing_cases()
+        for case in cases:
+            assert case["reversibility"] in valid
+
+    def test_expected_routing_valid_values(self) -> None:
+        valid = {"auto_proceed", "escalate", "block"}
+        cases = _load_routing_cases()
+        for case in cases:
+            assert case["expected_routing"] in valid, (
+                f"case {case['case_id']} has invalid expected_routing: {case['expected_routing']}"
+            )
+
+    def test_expected_routing_matches_policy(self) -> None:
+        """Ground truth in the JSON must match the routing policy implementation."""
+        cases = _load_routing_cases()
+        mismatches = []
+        for case in cases:
+            actual = _evaluate_routing_policy(
+                float(case["confidence"]),
+                str(case["reversibility"]),
+                int(case["purdue_zone"]),
+            )
+            if actual != case["expected_routing"]:
+                mismatches.append(
+                    f"{case['case_id']}: policy={actual} json={case['expected_routing']}"
+                )
+        assert not mismatches, "Ground truth mismatch:\n" + "\n".join(mismatches)
+
+    def test_covers_all_three_routing_outcomes(self) -> None:
+        cases = _load_routing_cases()
+        outcomes = {case["expected_routing"] for case in cases}
+        assert outcomes == {"auto_proceed", "escalate", "block"}
