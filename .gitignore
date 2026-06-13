@@ -132,3 +132,5 @@ celerybeat.pid
 # pytest-cov
 .coverage
 htmlcov/
+
+.claude/
