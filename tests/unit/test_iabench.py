@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 from benchmarks.iabench import (
@@ -10,7 +11,6 @@ from benchmarks.iabench import (
     BenchmarkResult,
     BenchmarkSuite,
     _compute_macro_f1,
-    _evaluate_routing_policy,
     _load_routing_cases,
     _make_anomaly_dataset,
     _make_stub,
@@ -18,6 +18,40 @@ from benchmarks.iabench import (
     _normalize_doc_id,
     _normalize_fault_type,
 )
+
+# ---------------------------------------------------------------------------
+# Test-local oracle: faithful implementation of config/escalation_rules.yaml.
+# This is NOT used by the benchmark harness — it exists solely so tests can
+# verify that ia7_routing_cases.json expected_routing values reflect the
+# DOCUMENTED policy, independent of any harness code.
+# ---------------------------------------------------------------------------
+_SAFETY_INTERLOCK_PATTERN = re.compile(r"(unsafe|hazard|emergency|e-stop|alarm)", re.IGNORECASE)
+
+
+def _documented_policy_oracle(
+    confidence: float,
+    reversibility: str,
+    agent_zone: int,
+    target_zone: int,
+    intent: str = "",
+) -> str:
+    """Reference routing decision derived from config/escalation_rules.yaml.
+
+    Rule priority matches the config ordering:
+      1. safety_interlock: intent_pattern match OR irreversible → block
+      2. purdue_zone_violation: agent_zone > 3 AND target_zone < 2 → block
+      3. low_confidence_decision: confidence < 0.85 → escalate
+      4. default → auto_proceed
+    """
+    if _SAFETY_INTERLOCK_PATTERN.search(intent):
+        return "block"
+    if reversibility == "irreversible":
+        return "block"
+    if agent_zone > 3 and target_zone < 2:
+        return "block"
+    if confidence < _IA7_HITL_THRESHOLD:
+        return "escalate"
+    return "auto_proceed"
 
 
 class TestBenchmarkDataStructures:
@@ -292,53 +326,71 @@ class TestStubFactory:
 # ---------------------------------------------------------------------------
 
 
-class TestEvaluateRoutingPolicy:
-    """Tests for _evaluate_routing_policy — deterministic routing from config."""
+class TestDocumentedPolicyOracle:
+    """Tests for _documented_policy_oracle — faithful implementation of escalation_rules.yaml.
+
+    This oracle is test-local (never called by the benchmark harness). It verifies
+    that the oracle itself correctly captures the documented policy so it can be
+    used as a reliable reference for TestLoadRoutingCases.
+    """
 
     def test_high_conf_reversible_zone3_auto_proceed(self) -> None:
-        assert _evaluate_routing_policy(0.95, "reversible", 3) == "auto_proceed"
+        assert _documented_policy_oracle(0.95, "reversible", 3, 3) == "auto_proceed"
 
     def test_high_conf_soft_zone4_auto_proceed(self) -> None:
-        assert _evaluate_routing_policy(0.90, "soft", 4) == "auto_proceed"
+        assert _documented_policy_oracle(0.90, "soft", 3, 4) == "auto_proceed"
 
     def test_confidence_exactly_at_threshold_auto_proceed(self) -> None:
-        assert _evaluate_routing_policy(_IA7_HITL_THRESHOLD, "reversible", 3) == "auto_proceed"
+        assert _documented_policy_oracle(_IA7_HITL_THRESHOLD, "reversible", 3, 3) == "auto_proceed"
 
     def test_confidence_just_below_threshold_escalates(self) -> None:
         below = _IA7_HITL_THRESHOLD - 0.01
-        assert _evaluate_routing_policy(below, "reversible", 3) == "escalate"
+        assert _documented_policy_oracle(below, "reversible", 3, 3) == "escalate"
 
     def test_moderate_conf_reversible_escalates(self) -> None:
-        assert _evaluate_routing_policy(0.75, "reversible", 3) == "escalate"
+        assert _documented_policy_oracle(0.75, "reversible", 3, 3) == "escalate"
 
     def test_low_conf_reversible_escalates(self) -> None:
-        assert _evaluate_routing_policy(0.20, "reversible", 4) == "escalate"
+        assert _documented_policy_oracle(0.20, "reversible", 3, 4) == "escalate"
 
     def test_moderate_conf_soft_escalates(self) -> None:
-        assert _evaluate_routing_policy(0.80, "soft", 3) == "escalate"
+        assert _documented_policy_oracle(0.80, "soft", 3, 3) == "escalate"
 
     def test_irreversible_high_conf_blocks(self) -> None:
-        assert _evaluate_routing_policy(0.95, "irreversible", 3) == "block"
+        assert _documented_policy_oracle(0.95, "irreversible", 3, 3) == "block"
 
     def test_irreversible_low_conf_blocks(self) -> None:
-        assert _evaluate_routing_policy(0.20, "irreversible", 4) == "block"
+        assert _documented_policy_oracle(0.20, "irreversible", 3, 4) == "block"
 
     def test_irreversible_takes_priority_over_low_conf(self) -> None:
-        # block wins over escalate — irreversibility checked first
-        assert _evaluate_routing_policy(0.10, "irreversible", 3) == "block"
+        assert _documented_policy_oracle(0.10, "irreversible", 3, 3) == "block"
 
-    def test_zone1_high_conf_reversible_blocks(self) -> None:
-        assert _evaluate_routing_policy(0.95, "reversible", 1) == "block"
+    def test_intent_pattern_emergency_blocks(self) -> None:
+        # safety_interlock: intent_pattern "(unsafe|hazard|emergency|e-stop|alarm)"
+        result = _documented_policy_oracle(0.95, "reversible", 3, 3, "emergency e-stop override")
+        assert result == "block"
 
-    def test_zone0_high_conf_reversible_blocks(self) -> None:
-        assert _evaluate_routing_policy(0.95, "reversible", 0) == "block"
+    def test_intent_pattern_alarm_blocks(self) -> None:
+        result = _documented_policy_oracle(0.90, "soft", 3, 3, "unsafe valve alarm acknowledged")
+        assert result == "block"
 
-    def test_zone1_high_conf_soft_blocks(self) -> None:
-        assert _evaluate_routing_policy(0.90, "soft", 1) == "block"
+    def test_intent_pattern_takes_priority_over_low_conf(self) -> None:
+        assert _documented_policy_oracle(0.50, "reversible", 3, 3, "hazard detected") == "block"
 
-    def test_zone2_is_not_blocked_by_zone_rule(self) -> None:
-        # zone 2 is above the blocked-zone threshold
-        assert _evaluate_routing_policy(0.95, "reversible", 2) == "auto_proceed"
+    def test_purdue_zone_violation_agent4_target1_blocks(self) -> None:
+        # purdue_zone_violation: agent_zone_above:3 AND target_zone_below:2
+        assert _documented_policy_oracle(0.95, "reversible", 4, 1) == "block"
+
+    def test_purdue_zone_violation_agent4_target0_blocks(self) -> None:
+        assert _documented_policy_oracle(0.95, "reversible", 4, 0) == "block"
+
+    def test_purdue_agent3_target1_not_blocked_by_zone(self) -> None:
+        # agent_zone=3 does NOT satisfy agent_zone_above:3 (must be > 3)
+        assert _documented_policy_oracle(0.95, "reversible", 3, 1) == "auto_proceed"
+
+    def test_purdue_agent4_target2_not_blocked_by_zone(self) -> None:
+        # target_zone=2 does NOT satisfy target_zone_below:2 (must be < 2)
+        assert _documented_policy_oracle(0.95, "reversible", 4, 2) == "auto_proceed"
 
     def test_threshold_constant_is_0_85(self) -> None:
         assert pytest.approx(0.85) == _IA7_HITL_THRESHOLD
@@ -412,7 +464,15 @@ class TestLoadRoutingCases:
 
     def test_required_fields_present(self) -> None:
         cases = _load_routing_cases()
-        required = {"case_id", "confidence", "reversibility", "purdue_zone", "expected_routing"}
+        required = {
+            "case_id",
+            "confidence",
+            "reversibility",
+            "agent_zone",
+            "target_zone",
+            "expected_routing",
+            "rationale",
+        }
         for case in cases:
             assert required.issubset(case.keys()), f"Missing fields in {case['case_id']}"
 
@@ -420,6 +480,13 @@ class TestLoadRoutingCases:
         cases = _load_routing_cases()
         for case in cases:
             assert 0.0 <= float(case["confidence"]) <= 1.0
+
+    def test_zone_values_in_range(self) -> None:
+        cases = _load_routing_cases()
+        for case in cases:
+            cid = case["case_id"]
+            assert 0 <= int(case["agent_zone"]) <= 4, f"agent_zone out of range in {cid}"
+            assert 0 <= int(case["target_zone"]) <= 4, f"target_zone out of range in {cid}"
 
     def test_reversibility_valid_values(self) -> None:
         valid = {"reversible", "soft", "irreversible"}
@@ -435,21 +502,31 @@ class TestLoadRoutingCases:
                 f"case {case['case_id']} has invalid expected_routing: {case['expected_routing']}"
             )
 
-    def test_expected_routing_matches_policy(self) -> None:
-        """Ground truth in the JSON must match the routing policy implementation."""
+    def test_expected_routing_matches_documented_policy(self) -> None:
+        """Ground truth in the JSON must match the DOCUMENTED policy (escalation_rules.yaml).
+
+        Uses _documented_policy_oracle — the test-local reference that faithfully
+        implements the config — NOT any harness code. This verifies the corpus is
+        hand-authored correctly, independently of what the real agent does.
+        """
         cases = _load_routing_cases()
         mismatches = []
         for case in cases:
-            actual = _evaluate_routing_policy(
+            oracle = _documented_policy_oracle(
                 float(case["confidence"]),
                 str(case["reversibility"]),
-                int(case["purdue_zone"]),
+                int(case["agent_zone"]),
+                int(case["target_zone"]),
+                str(case.get("description", "")),
             )
-            if actual != case["expected_routing"]:
+            if oracle != case["expected_routing"]:
                 mismatches.append(
-                    f"{case['case_id']}: policy={actual} json={case['expected_routing']}"
+                    f"{case['case_id']}: oracle={oracle} json={case['expected_routing']} "
+                    f"rationale={case.get('rationale', '')}"
                 )
-        assert not mismatches, "Ground truth mismatch:\n" + "\n".join(mismatches)
+        assert not mismatches, "Ground truth mismatch against documented policy:\n" + "\n".join(
+            mismatches
+        )
 
     def test_covers_all_three_routing_outcomes(self) -> None:
         cases = _load_routing_cases()
