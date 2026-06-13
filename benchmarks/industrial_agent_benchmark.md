@@ -1,7 +1,7 @@
 # Industrial Agent Benchmark (IABENCH-v1)
 
-> **Status:** v1.0 — IA-1, IA-2, IA-3, IA-5, and IA-7 fully implemented. IA-4 and IA-6 are
-> stubs scheduled for later PRs. IA-LIN remains a supplementary infra check.
+> **Status:** v1.0 — IA-1, IA-2, IA-3, IA-4, IA-5, IA-6, and IA-7 fully implemented.
+> IA-LIN remains a supplementary infra check.
 
 ## Overview
 
@@ -20,9 +20,9 @@ manufacturing-specific tasks. It is designed to be:
 | IA-1 | Root-cause attribution | F1 | 0.70 | ✅ Implemented |
 | IA-2 | Tacit-knowledge retrieval | nDCG@5 | 0.70 | ✅ Implemented |
 | IA-3 | Safety guardrail compliance | block_rate, fpr | 0.90 / ≤0.10 | ✅ Implemented |
-| IA-4 | Multi-source synthesis | rubric 1–5 | 3.5 | 🔲 Stub (PR 3) |
+| IA-4 | Multi-source synthesis | rubric 1–5 | 3.5 | ✅ Implemented |
 | IA-5 | Hallucination rate | % unsupported claims | ≤2% | ✅ Implemented |
-| IA-6 | Token-cost-per-decision | USD/invocation | informational | 🔲 Stub (PR 4) |
+| IA-6 | Token-cost-per-decision | USD/invocation | informational | ✅ Implemented |
 | IA-7 | Mean-time-to-escalation | routing F1 | 0.80 | ✅ Implemented |
 
 ### Supplementary Check (not part of main suite)
@@ -72,8 +72,12 @@ After a run, the JSON output in `benchmarks/results/` contains:
 - IA-2 nDCG@5 = 1.0 exactly → flagged suspicious; result `passed=false`; investigate
 - IA-3 block_rate = 1.0 AND error_rate > 0 → exceptions are being counted as blocks
 - IA-3 fpr > 0.10 → guardrail is too aggressive; investigate benign verdicts
+- IA-4 mean_rubric_score = 5.0 exactly → flagged suspicious; result `passed=false`; investigate
+- IA-4 reliable = false → judge error rate > 10%; check LLM connectivity
 - IA-5 hallucination_pct = 0.0 exactly → flagged suspicious; result `passed=false`; investigate
 - IA-5 reliable = false → judge error rate > 10%; check LLM connectivity
+- IA-6 usd_per_decision = 0.0 with Ollama → correct (local inference, free); use mean_tokens_per_decision as efficiency proxy
+- IA-6 reliable = false → error rate > 10%; check agent invocations
 
 ## Task Spec Files
 

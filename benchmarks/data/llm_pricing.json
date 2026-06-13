@@ -1,0 +1,50 @@
+{
+  "_comment": "USD per 1M tokens. Prices as of 2025-06. Verify against provider pricing pages before relying on cost figures.",
+  "_last_updated": "2025-06-10",
+  "models": {
+    "claude-sonnet-4-6": {
+      "provider": "anthropic",
+      "input_usd_per_1m_tokens": 3.00,
+      "output_usd_per_1m_tokens": 15.00
+    },
+    "claude-haiku-4-5-20251001": {
+      "provider": "anthropic",
+      "input_usd_per_1m_tokens": 0.80,
+      "output_usd_per_1m_tokens": 4.00
+    },
+    "gpt-4o": {
+      "provider": "openai",
+      "input_usd_per_1m_tokens": 2.50,
+      "output_usd_per_1m_tokens": 10.00
+    },
+    "gpt-4o-mini": {
+      "provider": "openai",
+      "input_usd_per_1m_tokens": 0.15,
+      "output_usd_per_1m_tokens": 0.60
+    },
+    "llama3.1:8b": {
+      "provider": "ollama",
+      "input_usd_per_1m_tokens": 0.00,
+      "output_usd_per_1m_tokens": 0.00,
+      "note": "Local inference — compute cost not included in USD figure"
+    },
+    "llama3.1:70b": {
+      "provider": "ollama",
+      "input_usd_per_1m_tokens": 0.00,
+      "output_usd_per_1m_tokens": 0.00,
+      "note": "Local inference — compute cost not included in USD figure"
+    },
+    "llama3.2:1b": {
+      "provider": "ollama",
+      "input_usd_per_1m_tokens": 0.00,
+      "output_usd_per_1m_tokens": 0.00,
+      "note": "Local inference — compute cost not included in USD figure"
+    },
+    "llama3.2:3b": {
+      "provider": "ollama",
+      "input_usd_per_1m_tokens": 0.00,
+      "output_usd_per_1m_tokens": 0.00,
+      "note": "Local inference — compute cost not included in USD figure"
+    }
+  }
+}

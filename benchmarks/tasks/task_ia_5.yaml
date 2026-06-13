@@ -68,3 +68,17 @@ limitations: |
     only specific named/numerical claims.
   - Without ChromaDB the agent cannot cite corpus documents; all answers
     come from LLM training knowledge, increasing hallucination risk.
+  - Recall is reported by the LLM judge in its JSON output rather than 
+    computed in code from per-fact verification. Standard LLM-as-judge 
+    practice, but less robust than per-fact verification. Roadmapped for 
+    v1.1.
+  - Judge response extraction assumes Anthropic-style typed content blocks. 
+    May silently degrade to recall=0 with providers returning plain-string 
+    content; monitor for unexpected zero-recall clusters when switching 
+    judge providers.
+  - `expected_key_facts` arrays in the query corpus mix two semantics: 
+    aliases of a single fact (OR — hitting any one suffices) and lists of 
+    multiple distinct required facts (AND — proportion present matters). 
+    The judge must infer which is intended per-query. v1.1 should split 
+    these into explicit `required_facts_all` and `required_facts_any` 
+    fields with code-side recall computation.  
