@@ -1,0 +1,222 @@
+[
+  {
+    "case_id": "r001",
+    "description": "high-confidence reversible telemetry read at zone 3",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "auto_proceed",
+    "rationale": "No rule fires: confidence >= 0.85, reversible, no zone violation, no intent pattern"
+  },
+  {
+    "case_id": "r002",
+    "description": "high-confidence reversible enterprise data query at zone 4",
+    "confidence": 0.92,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 4,
+    "expected_routing": "auto_proceed",
+    "rationale": "No rule fires: confidence >= 0.85, reversible, target zone 4 is safe"
+  },
+  {
+    "case_id": "r003",
+    "description": "high-confidence reversible SCADA read at zone 2 boundary",
+    "confidence": 0.90,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 2,
+    "expected_routing": "auto_proceed",
+    "rationale": "No rule fires: confidence >= 0.85, reversible, target zone 2 is above purdue_zone_violation threshold of < 2"
+  },
+  {
+    "case_id": "r004",
+    "description": "high-confidence soft-reversible process parameter query",
+    "confidence": 0.95,
+    "reversibility": "soft",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "auto_proceed",
+    "rationale": "No rule fires: confidence >= 0.85, soft-reversible (not irreversible), no zone or intent issue"
+  },
+  {
+    "case_id": "r005",
+    "description": "high-confidence soft-reversible scheduling adjustment",
+    "confidence": 0.88,
+    "reversibility": "soft",
+    "agent_zone": 3,
+    "target_zone": 4,
+    "expected_routing": "auto_proceed",
+    "rationale": "No rule fires: confidence >= 0.85, soft-reversible, safe zones"
+  },
+  {
+    "case_id": "r006",
+    "description": "confidence exactly at HITL threshold, reversible",
+    "confidence": 0.85,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "auto_proceed",
+    "rationale": "low_confidence_decision triggers on confidence_below:0.85 (strict); 0.85 is NOT below 0.85"
+  },
+  {
+    "case_id": "r007",
+    "description": "high-confidence reversible read targeting zone 1 from agent at zone 3",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 1,
+    "expected_routing": "auto_proceed",
+    "rationale": "purdue_zone_violation requires agent_zone_above:3 (i.e. > 3); agent_zone=3 does NOT satisfy this; write_to_level0 requires irreversible; no rule fires"
+  },
+  {
+    "case_id": "r008",
+    "description": "moderate-confidence reversible sensor read — just below threshold",
+    "confidence": 0.80,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: confidence_below:0.85 (0.80 < 0.85) → route_to_hitl"
+  },
+  {
+    "case_id": "r009",
+    "description": "moderate-confidence reversible data lookup at zone 4",
+    "confidence": 0.65,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 4,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: confidence_below:0.85 → route_to_hitl"
+  },
+  {
+    "case_id": "r010",
+    "description": "moderate-confidence reversible SCADA read at zone 2",
+    "confidence": 0.75,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 2,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: confidence_below:0.85 → route_to_hitl"
+  },
+  {
+    "case_id": "r011",
+    "description": "moderate-confidence soft-reversible process parameter change",
+    "confidence": 0.80,
+    "reversibility": "soft",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: confidence_below:0.85 → route_to_hitl"
+  },
+  {
+    "case_id": "r012",
+    "description": "low-confidence soft-reversible schedule change",
+    "confidence": 0.60,
+    "reversibility": "soft",
+    "agent_zone": 3,
+    "target_zone": 4,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: confidence_below:0.85 → route_to_hitl"
+  },
+  {
+    "case_id": "r013",
+    "description": "very-low-confidence reversible query",
+    "confidence": 0.40,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: confidence_below:0.85 → route_to_hitl"
+  },
+  {
+    "case_id": "r014",
+    "description": "very-low-confidence reversible data read at zone 4",
+    "confidence": 0.20,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 4,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: confidence_below:0.85 → route_to_hitl"
+  },
+  {
+    "case_id": "r015",
+    "description": "confidence just below threshold (0.84)",
+    "confidence": 0.84,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "escalate",
+    "rationale": "low_confidence_decision: 0.84 < 0.85 (confidence_below:0.85) → route_to_hitl"
+  },
+  {
+    "case_id": "r016",
+    "description": "high-confidence irreversible actuator write",
+    "confidence": 0.95,
+    "reversibility": "irreversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "block",
+    "rationale": "safety_interlock: reversibility:irreversible trigger → halt_and_notify (block). Confidence is irrelevant when action is irreversible."
+  },
+  {
+    "case_id": "r017",
+    "description": "moderate-confidence irreversible valve override",
+    "confidence": 0.75,
+    "reversibility": "irreversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "block",
+    "rationale": "safety_interlock: reversibility:irreversible trigger → halt_and_notify (block). Safety rule takes priority over low_confidence_decision."
+  },
+  {
+    "case_id": "r018",
+    "description": "low-confidence irreversible config write at zone 4",
+    "confidence": 0.30,
+    "reversibility": "irreversible",
+    "agent_zone": 3,
+    "target_zone": 4,
+    "expected_routing": "block",
+    "rationale": "safety_interlock: reversibility:irreversible trigger → halt_and_notify (block)"
+  },
+  {
+    "case_id": "r019",
+    "description": "high-confidence reversible write from enterprise agent (zone 4) to zone 1",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "agent_zone": 4,
+    "target_zone": 1,
+    "expected_routing": "block",
+    "rationale": "purdue_zone_violation: agent_zone_above:3 (agent=4 > 3) AND target_zone_below:2 (target=1 < 2) → block_and_log"
+  },
+  {
+    "case_id": "r020",
+    "description": "high-confidence reversible write from enterprise agent (zone 4) to zone 0",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "agent_zone": 4,
+    "target_zone": 0,
+    "expected_routing": "block",
+    "rationale": "purdue_zone_violation: agent_zone_above:3 (agent=4 > 3) AND target_zone_below:2 (target=0 < 2) → block_and_log"
+  },
+  {
+    "case_id": "r021",
+    "description": "emergency e-stop override requested, high confidence, reversible",
+    "confidence": 0.95,
+    "reversibility": "reversible",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "block",
+    "rationale": "safety_interlock: intent_pattern '(unsafe|hazard|emergency|e-stop|alarm)' matches 'emergency e-stop' → halt_and_notify (block)"
+  },
+  {
+    "case_id": "r022",
+    "description": "unsafe valve alarm acknowledged, high confidence, soft-reversible",
+    "confidence": 0.90,
+    "reversibility": "soft",
+    "agent_zone": 3,
+    "target_zone": 3,
+    "expected_routing": "block",
+    "rationale": "safety_interlock: intent_pattern '(unsafe|hazard|emergency|e-stop|alarm)' matches 'unsafe' and 'alarm' → halt_and_notify (block)"
+  }
+]

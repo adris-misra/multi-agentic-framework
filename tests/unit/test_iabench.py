@@ -4,18 +4,22 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from unittest.mock import AsyncMock
 
 import pytest
 from benchmarks.iabench import (
+    _IA7_HITL_THRESHOLD,
     BenchmarkResult,
     BenchmarkSuite,
+    _compute_macro_f1,
     _compute_rubric_score,
     _estimate_tokens_from_messages,
     _extract_json_block,
     _judge_hallucination,
     _judge_synthesis_rubric,
     _load_pricing_table,
+    _load_routing_cases,
     _lookup_model_price,
     _make_anomaly_dataset,
     _make_stub,
@@ -24,6 +28,40 @@ from benchmarks.iabench import (
     _normalize_fault_type,
     _TokenTracker,
 )
+
+# ---------------------------------------------------------------------------
+# Test-local oracle: faithful implementation of config/escalation_rules.yaml.
+# This is NOT used by the benchmark harness — it exists solely so tests can
+# verify that ia7_routing_cases.json expected_routing values reflect the
+# DOCUMENTED policy, independent of any harness code.
+# ---------------------------------------------------------------------------
+_SAFETY_INTERLOCK_PATTERN = re.compile(r"(unsafe|hazard|emergency|e-stop|alarm)", re.IGNORECASE)
+
+
+def _documented_policy_oracle(
+    confidence: float,
+    reversibility: str,
+    agent_zone: int,
+    target_zone: int,
+    intent: str = "",
+) -> str:
+    """Reference routing decision derived from config/escalation_rules.yaml.
+
+    Rule priority matches the config ordering:
+      1. safety_interlock: intent_pattern match OR irreversible → block
+      2. purdue_zone_violation: agent_zone > 3 AND target_zone < 2 → block
+      3. low_confidence_decision: confidence < 0.85 → escalate
+      4. default → auto_proceed
+    """
+    if _SAFETY_INTERLOCK_PATTERN.search(intent):
+        return "block"
+    if reversibility == "irreversible":
+        return "block"
+    if agent_zone > 3 and target_zone < 2:
+        return "block"
+    if confidence < _IA7_HITL_THRESHOLD:
+        return "escalate"
+    return "auto_proceed"
 
 
 class TestBenchmarkDataStructures:
@@ -291,6 +329,224 @@ class TestStubFactory:
         assert s["failed"] == 0
         assert s["not_implemented"] == 1
         assert s["total_tasks"] == 2
+
+
+# ---------------------------------------------------------------------------
+# IA-7 helpers
+# ---------------------------------------------------------------------------
+
+
+class TestDocumentedPolicyOracle:
+    """Tests for _documented_policy_oracle — faithful implementation of escalation_rules.yaml.
+
+    This oracle is test-local (never called by the benchmark harness). It verifies
+    that the oracle itself correctly captures the documented policy so it can be
+    used as a reliable reference for TestLoadRoutingCases.
+    """
+
+    def test_high_conf_reversible_zone3_auto_proceed(self) -> None:
+        assert _documented_policy_oracle(0.95, "reversible", 3, 3) == "auto_proceed"
+
+    def test_high_conf_soft_zone4_auto_proceed(self) -> None:
+        assert _documented_policy_oracle(0.90, "soft", 3, 4) == "auto_proceed"
+
+    def test_confidence_exactly_at_threshold_auto_proceed(self) -> None:
+        assert _documented_policy_oracle(_IA7_HITL_THRESHOLD, "reversible", 3, 3) == "auto_proceed"
+
+    def test_confidence_just_below_threshold_escalates(self) -> None:
+        below = _IA7_HITL_THRESHOLD - 0.01
+        assert _documented_policy_oracle(below, "reversible", 3, 3) == "escalate"
+
+    def test_moderate_conf_reversible_escalates(self) -> None:
+        assert _documented_policy_oracle(0.75, "reversible", 3, 3) == "escalate"
+
+    def test_low_conf_reversible_escalates(self) -> None:
+        assert _documented_policy_oracle(0.20, "reversible", 3, 4) == "escalate"
+
+    def test_moderate_conf_soft_escalates(self) -> None:
+        assert _documented_policy_oracle(0.80, "soft", 3, 3) == "escalate"
+
+    def test_irreversible_high_conf_blocks(self) -> None:
+        assert _documented_policy_oracle(0.95, "irreversible", 3, 3) == "block"
+
+    def test_irreversible_low_conf_blocks(self) -> None:
+        assert _documented_policy_oracle(0.20, "irreversible", 3, 4) == "block"
+
+    def test_irreversible_takes_priority_over_low_conf(self) -> None:
+        assert _documented_policy_oracle(0.10, "irreversible", 3, 3) == "block"
+
+    def test_intent_pattern_emergency_blocks(self) -> None:
+        # safety_interlock: intent_pattern "(unsafe|hazard|emergency|e-stop|alarm)"
+        result = _documented_policy_oracle(0.95, "reversible", 3, 3, "emergency e-stop override")
+        assert result == "block"
+
+    def test_intent_pattern_alarm_blocks(self) -> None:
+        result = _documented_policy_oracle(0.90, "soft", 3, 3, "unsafe valve alarm acknowledged")
+        assert result == "block"
+
+    def test_intent_pattern_takes_priority_over_low_conf(self) -> None:
+        assert _documented_policy_oracle(0.50, "reversible", 3, 3, "hazard detected") == "block"
+
+    def test_purdue_zone_violation_agent4_target1_blocks(self) -> None:
+        # purdue_zone_violation: agent_zone_above:3 AND target_zone_below:2
+        assert _documented_policy_oracle(0.95, "reversible", 4, 1) == "block"
+
+    def test_purdue_zone_violation_agent4_target0_blocks(self) -> None:
+        assert _documented_policy_oracle(0.95, "reversible", 4, 0) == "block"
+
+    def test_purdue_agent3_target1_not_blocked_by_zone(self) -> None:
+        # agent_zone=3 does NOT satisfy agent_zone_above:3 (must be > 3)
+        assert _documented_policy_oracle(0.95, "reversible", 3, 1) == "auto_proceed"
+
+    def test_purdue_agent4_target2_not_blocked_by_zone(self) -> None:
+        # target_zone=2 does NOT satisfy target_zone_below:2 (must be < 2)
+        assert _documented_policy_oracle(0.95, "reversible", 4, 2) == "auto_proceed"
+
+    def test_threshold_constant_is_0_85(self) -> None:
+        assert pytest.approx(0.85) == _IA7_HITL_THRESHOLD
+
+
+class TestComputeMacroF1:
+    """Tests for _compute_macro_f1 — macro-averaged F1 across routing classes."""
+
+    def test_perfect_predictions_return_1_0(self) -> None:
+        preds = ["auto_proceed", "escalate", "block", "escalate", "block"]
+        truth = ["auto_proceed", "escalate", "block", "escalate", "block"]
+        f1, _ = _compute_macro_f1(preds, truth)
+        assert f1 == pytest.approx(1.0)
+
+    def test_all_wrong_return_0_0(self) -> None:
+        preds = ["block", "block", "block"]
+        truth = ["auto_proceed", "escalate", "auto_proceed"]
+        f1, _ = _compute_macro_f1(preds, truth)
+        assert f1 == pytest.approx(0.0)
+
+    def test_per_class_keys_present(self) -> None:
+        preds = ["auto_proceed", "escalate"]
+        truth = ["auto_proceed", "escalate"]
+        _, per_class = _compute_macro_f1(preds, truth)
+        assert set(per_class.keys()) == {"auto_proceed", "escalate", "block"}
+
+    def test_per_class_fields_present(self) -> None:
+        preds = ["auto_proceed"]
+        truth = ["auto_proceed"]
+        _, per_class = _compute_macro_f1(preds, truth)
+        cls = per_class["auto_proceed"]
+        assert "precision" in cls
+        assert "recall" in cls
+        assert "f1" in cls
+        assert "tp" in cls
+
+    def test_class_absent_from_predictions_contributes_zero_f1(self) -> None:
+        # "block" never predicted — its F1 should be 0
+        preds = ["auto_proceed", "escalate", "auto_proceed"]
+        truth = ["auto_proceed", "escalate", "block"]
+        f1, per_class = _compute_macro_f1(preds, truth)
+        assert per_class["block"]["f1"] == pytest.approx(0.0)
+        assert f1 < 1.0
+
+    def test_single_class_all_correct(self) -> None:
+        preds = ["escalate", "escalate", "escalate"]
+        truth = ["escalate", "escalate", "escalate"]
+        f1, per_class = _compute_macro_f1(preds, truth)
+        assert per_class["escalate"]["f1"] == pytest.approx(1.0)
+        # Other classes absent in both — P and R undefined → 0 for those classes
+        assert f1 == pytest.approx(1 / 3)
+
+    def test_macro_f1_is_mean_of_per_class(self) -> None:
+        preds = ["auto_proceed", "escalate", "block"]
+        truth = ["auto_proceed", "escalate", "block"]
+        f1, per_class = _compute_macro_f1(preds, truth)
+        expected = sum(per_class[c]["f1"] for c in per_class) / len(per_class)
+        assert f1 == pytest.approx(expected)
+
+
+class TestLoadRoutingCases:
+    """Tests for _load_routing_cases — JSON corpus loader."""
+
+    def test_returns_list(self) -> None:
+        cases = _load_routing_cases()
+        assert isinstance(cases, list)
+
+    def test_has_enough_cases(self) -> None:
+        cases = _load_routing_cases()
+        assert len(cases) >= 15
+
+    def test_required_fields_present(self) -> None:
+        cases = _load_routing_cases()
+        required = {
+            "case_id",
+            "confidence",
+            "reversibility",
+            "agent_zone",
+            "target_zone",
+            "expected_routing",
+            "rationale",
+        }
+        for case in cases:
+            assert required.issubset(case.keys()), f"Missing fields in {case['case_id']}"
+
+    def test_confidence_in_range(self) -> None:
+        cases = _load_routing_cases()
+        for case in cases:
+            assert 0.0 <= float(case["confidence"]) <= 1.0
+
+    def test_zone_values_in_range(self) -> None:
+        cases = _load_routing_cases()
+        for case in cases:
+            cid = case["case_id"]
+            assert 0 <= int(case["agent_zone"]) <= 4, f"agent_zone out of range in {cid}"
+            assert 0 <= int(case["target_zone"]) <= 4, f"target_zone out of range in {cid}"
+
+    def test_reversibility_valid_values(self) -> None:
+        valid = {"reversible", "soft", "irreversible"}
+        cases = _load_routing_cases()
+        for case in cases:
+            assert case["reversibility"] in valid
+
+    def test_expected_routing_valid_values(self) -> None:
+        valid = {"auto_proceed", "escalate", "block"}
+        cases = _load_routing_cases()
+        for case in cases:
+            assert case["expected_routing"] in valid, (
+                f"case {case['case_id']} has invalid expected_routing: {case['expected_routing']}"
+            )
+
+    def test_expected_routing_matches_documented_policy(self) -> None:
+        """Ground truth in the JSON must match the DOCUMENTED policy (escalation_rules.yaml).
+
+        Uses _documented_policy_oracle — the test-local reference that faithfully
+        implements the config — NOT any harness code. This verifies the corpus is
+        hand-authored correctly, independently of what the real agent does.
+        """
+        cases = _load_routing_cases()
+        mismatches = []
+        for case in cases:
+            oracle = _documented_policy_oracle(
+                float(case["confidence"]),
+                str(case["reversibility"]),
+                int(case["agent_zone"]),
+                int(case["target_zone"]),
+                str(case.get("description", "")),
+            )
+            if oracle != case["expected_routing"]:
+                mismatches.append(
+                    f"{case['case_id']}: oracle={oracle} json={case['expected_routing']} "
+                    f"rationale={case.get('rationale', '')}"
+                )
+        assert not mismatches, "Ground truth mismatch against documented policy:\n" + "\n".join(
+            mismatches
+        )
+
+    def test_covers_all_three_routing_outcomes(self) -> None:
+        cases = _load_routing_cases()
+        outcomes = {case["expected_routing"] for case in cases}
+        assert outcomes == {"auto_proceed", "escalate", "block"}
+
+
+# ---------------------------------------------------------------------------
+# IA-4 / IA-6 helpers
+# ---------------------------------------------------------------------------
 
 
 class TestComputeRubricScore:

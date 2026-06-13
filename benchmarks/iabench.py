@@ -8,7 +8,7 @@ Canonical task inventory (spec source: benchmarks/industrial_agent_benchmark.md)
   IA-4  Multi-source synthesis            (expert-rated rubric 1–5)   — IMPLEMENTED
   IA-5  Hallucination rate                (% unsupported claims)      — IMPLEMENTED
   IA-6  Token-cost-per-decision           (USD / invocation)          — IMPLEMENTED
-  IA-7  Mean-time-to-escalation           (latency + routing F1)      — STUB
+  IA-7  Mean-time-to-escalation           (latency + routing F1)      — IMPLEMENTED
   IA-LIN  Lineage completeness (supplementary, not part of IABENCH-v1.0 main suite)
 
 NOTE ON TASK NUMBERING
@@ -825,6 +825,207 @@ async def _run_task_ia5(
 
 
 # ---------------------------------------------------------------------------
+# IA-7: Mean-time-to-escalation appropriateness  (IMPLEMENTED)
+# ---------------------------------------------------------------------------
+
+# Confidence threshold sourced from config/escalation_rules.yaml:
+#   hitl_confidence_threshold: 0.85
+_IA7_HITL_THRESHOLD = 0.85
+
+# Routing classes for macro-F1 computation
+_IA7_ROUTING_CLASSES = ("auto_proceed", "escalate", "block")
+
+
+def _compute_macro_f1(
+    predictions: list[str], ground_truth: list[str]
+) -> tuple[float, dict[str, Any]]:
+    """Compute macro-F1 across auto_proceed / escalate / block classes.
+
+    Returns (macro_f1, per_class_details).
+    """
+    f1_scores: list[float] = []
+    per_class: dict[str, Any] = {}
+
+    for cls in _IA7_ROUTING_CLASSES:
+        tp = sum(1 for p, g in zip(predictions, ground_truth, strict=True) if p == cls and g == cls)
+        fp = sum(1 for p, g in zip(predictions, ground_truth, strict=True) if p == cls and g != cls)
+        fn = sum(1 for p, g in zip(predictions, ground_truth, strict=True) if p != cls and g == cls)
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        f1_scores.append(f1)
+        per_class[cls] = {
+            "precision": round(precision, 4),
+            "recall": round(recall, 4),
+            "f1": round(f1, 4),
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+        }
+
+    return sum(f1_scores) / len(f1_scores), per_class
+
+
+def _load_routing_cases() -> list[dict[str, Any]]:
+    """Load IA-7 routing cases from benchmarks/data/ia7_routing_cases.json."""
+    path = Path(__file__).parent / "data" / "ia7_routing_cases.json"
+    return json.loads(path.read_text())  # type: ignore[no-any-return]
+
+
+async def _run_task_ia7(
+    model: str, provider: str, llm: Any, judge_model: str | None = None
+) -> BenchmarkResult:
+    """IA-7: Mean-time-to-escalation appropriateness — routing F1 across decision matrix.
+
+    Measures the REAL HITLSupervisorAgent.handle() against ground truth derived
+    from config/escalation_rules.yaml as documented.  Ground truth is hand-authored
+    in ia7_routing_cases.json — no code oracle is used to derive it.
+
+    The HITLSupervisorAgent implements ONLY low_confidence_decision (confidence < 0.85).
+    It does NOT implement:
+      - safety_interlock (irreversibility or intent_pattern triggers)
+      - purdue_zone_violation (agent_zone > 3 AND target_zone < 2)
+      - write_to_level0
+
+    Consequence: all "block" cases in the dataset will be misrouted (the agent
+    never produces "block"), so block-class F1 = 0 and routing_F1 < 0.80.
+    This is the honest finding — a policy gap, not a measurement failure.
+
+    The agent is fully deterministic (no LLM calls in the routing path) so
+    error_rate = 0 and reliable = True even when routing_F1 < 0.80.
+
+    Secondary metric: mean_time_to_escalation_ms is wall-clock latency of
+    routing decisions that the agent classifies as escalate.
+    """
+    from unittest.mock import AsyncMock
+
+    from industrial_agents.agents.base import AgentMessage
+    from industrial_agents.agents.hitl_supervisor import HITLSupervisorAgent
+    from industrial_agents.governance.lineage_bus import LineageBus
+
+    cases = _load_routing_cases()
+    mock_broker = AsyncMock()
+    governance = LineageBus()
+    supervisor = HITLSupervisorAgent(
+        name="ia7_bench_hitl",
+        llm=llm,
+        context_broker=mock_broker,
+        governance=governance,
+        confidence_threshold=_IA7_HITL_THRESHOLD,
+    )
+
+    predictions: list[str] = []
+    ground_truth_list: list[str] = []
+    escalation_latencies_ms: list[float] = []
+    per_case: list[dict[str, Any]] = []
+    error_count = 0
+    t0 = time.perf_counter()
+
+    for case in cases:
+        confidence = float(case["confidence"])
+        agent_zone = int(case.get("agent_zone", 3))
+        target_zone = int(case.get("target_zone", 3))
+        expected = str(case["expected_routing"])
+
+        case_start = time.perf_counter()
+        try:
+            # ALL cases go through the real HITLSupervisorAgent — no short-circuit.
+            # The agent is the system under test; we measure what it actually does.
+            msg = AgentMessage(
+                sender="bench",
+                intent=case.get("description", "routing decision"),
+                trace_id=str(uuid.uuid4()),
+                payload={
+                    "reversibility": case.get("reversibility", "reversible"),
+                    "agent_zone": agent_zone,
+                    "target_zone": target_zone,
+                },
+                confidence=confidence,
+            )
+            response = await supervisor.handle(msg)
+            response_intent = (
+                response.intent if isinstance(response, AgentMessage) else "hitl_not_required"
+            )
+            # HITLSupervisorAgent produces only "hitl_pending" or "hitl_not_required".
+            # It never produces "block". Cases with expected_routing="block" will
+            # mismatch, revealing the documented policy gap.
+            actual = "escalate" if response_intent == "hitl_pending" else "auto_proceed"
+
+            case_latency_ms = (time.perf_counter() - case_start) * 1000.0
+            predictions.append(actual)
+            ground_truth_list.append(expected)
+
+            if actual == "escalate":
+                escalation_latencies_ms.append(case_latency_ms)
+
+            entry: dict[str, Any] = {
+                "case_id": case["case_id"],
+                "description": case.get("description", ""),
+                "confidence": confidence,
+                "reversibility": case.get("reversibility", "reversible"),
+                "agent_zone": agent_zone,
+                "target_zone": target_zone,
+                "expected": expected,
+                "actual": actual,
+                "correct": actual == expected,
+                "latency_ms": round(case_latency_ms, 4),
+            }
+            if actual != expected:
+                entry["rationale"] = case.get("rationale", "")
+            per_case.append(entry)
+        except Exception as exc:
+            error_count += 1
+            per_case.append({"case_id": case["case_id"], "error": str(exc)})
+
+    n_cases = len(cases)
+    error_rate = error_count / n_cases if n_cases > 0 else 0.0
+    routing_f1, per_class = _compute_macro_f1(predictions, ground_truth_list)
+    mean_escalation_ms = (
+        sum(escalation_latencies_ms) / len(escalation_latencies_ms)
+        if escalation_latencies_ms
+        else 0.0
+    )
+    reliable = error_rate <= 0.10
+    duration = time.perf_counter() - t0
+
+    mismatches = [c for c in per_case if not c.get("correct", True)]
+    return BenchmarkResult(
+        task_id="IA-7",
+        task_name="Mean-time-to-escalation",
+        model=model,
+        provider=provider,
+        metric_name="routing_F1",
+        metric_value=round(routing_f1, 4),
+        pass_threshold=0.80,
+        passed=routing_f1 >= 0.80,
+        n_samples=n_cases,
+        duration_seconds=round(duration, 2),
+        reliable=reliable,
+        details=[
+            {
+                "routing_F1": round(routing_f1, 4),
+                "mean_time_to_escalation_ms": round(mean_escalation_ms, 4),
+                "error_rate": round(error_rate, 4),
+                "n_cases": n_cases,
+                "n_errors": error_count,
+                "n_mismatches": len(mismatches),
+                "routing_deterministic": True,
+                "hitl_threshold": _IA7_HITL_THRESHOLD,
+                "note": (
+                    "HITLSupervisorAgent implements only low_confidence_decision. "
+                    "block cases (safety_interlock, purdue_zone_violation) are never "
+                    "produced by the agent. routing_F1 < 0.80 is the expected honest "
+                    "finding — the agent does not fully implement the documented policy."
+                ),
+                "per_class_metrics": per_class,
+                "mismatches": mismatches,
+                "cases": per_case,
+            }
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
 # IA-LIN: Governance lineage completeness (supplementary — not in main suite)
 # ---------------------------------------------------------------------------
 
@@ -1394,9 +1595,7 @@ async def _run_task_ia6(
 # Stub factory — structured "not yet implemented" result
 # ---------------------------------------------------------------------------
 
-_STUB_TASKS: dict[str, tuple[str, str]] = {
-    "IA-7": ("Mean-time-to-escalation", "routing_F1"),
-}
+_STUB_TASKS: dict[str, tuple[str, str]] = {}
 
 
 def _make_stub(task_id: str, name: str, metric: str, model: str, provider: str) -> BenchmarkResult:
@@ -1432,6 +1631,7 @@ _TASK_RUNNERS: dict[str, Any] = {
     "IA-4": _run_task_ia4,
     "IA-5": _run_task_ia5,
     "IA-6": _run_task_ia6,
+    "IA-7": _run_task_ia7,
 }
 
 _SUPPLEMENTARY_RUNNERS: dict[str, Any] = {
