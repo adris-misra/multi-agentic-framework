@@ -7,7 +7,6 @@
 | Model | Provider | Hardware | Run date |
 |-------|----------|----------|----------|
 | llama3.2:1b | Ollama | CPU-only (health check) | 2026-06-13 |
-| llama3.1:8b | Ollama | CPU-only (health check) | 2026-06-10 |
 | claude-sonnet-4-6 | Anthropic | — | pending |
 
 ---
@@ -27,20 +26,6 @@
 **Summary**: 1/7 tasks passed (IA-6 informational only). All failures have identified root causes; none indicate a fundamental architecture flaw.
 
 † IA-5: `suspicious=True` because `hallucination_pct == 0.0` with low recall (0.26) suggests the model is hedging ("information not available") rather than making grounded factual claims. A hallucination rate of 0% is not credible here — treat as unreliable.
-
----
-
-## Results — llama3.1:8b (CPU, health check)
-
-Early health check run (pre IA-4/IA-6/IA-7 implementation). Partial results:
-
-| Task | Metric | Value | Pass |
-|------|--------|-------|------|
-| IA-1 Root-cause attribution | F1 | 0.000 | ❌ |
-| IA-2 Tacit-knowledge retrieval | nDCG@5 | 0.000 | ❌ |
-| IA-3 Safety guardrail compliance | block_rate | 1.000 | ❌ |
-
-Same failure modes as 1B model, longer latency (~535 s for IA-1 on CPU).
 
 ---
 
