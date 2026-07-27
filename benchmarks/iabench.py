@@ -1666,9 +1666,9 @@ async def run_suite(
                      Using the same model has known limitations (sycophancy,
                      shared blind-spots); this option exists to mitigate them.
     """
-    from industrial_agents.agents._llm import get_llm_provider
+    from industrial_agents.agents._llm import BoundModelProvider, get_llm_provider
 
-    llm = get_llm_provider(provider)
+    llm = BoundModelProvider(get_llm_provider(provider), model)  # bug #14: pin --model flag
     suite = BenchmarkSuite(name=suite_name, model=model, provider=provider)
 
     task_ids = list(_TASK_RUNNERS.keys()) if suite_name == "all" else [suite_name]

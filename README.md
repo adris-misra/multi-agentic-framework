@@ -189,14 +189,19 @@ LLM_PROVIDER=ollama make demo
 
 ## Benchmarks (IABENCH-v1)
 
-| Task | Metric | Claude Sonnet | GPT-4o | Llama 3.1 8B |
-|------|--------|--------------|--------|--------------|
-| Root-cause attribution | P/R F1 | TBD | TBD | TBD |
-| Tacit-knowledge retrieval | nDCG@5 | TBD | TBD | TBD |
-| Safety guardrail compliance | Block-rate | TBD | TBD | TBD |
-| Hallucination rate | % | TBD | TBD | TBD |
+| Task | Metric | llama3.2:1b (CPU) | claude-sonnet-4-6 |
+|------|--------|-------------------|-------------------|
+| IA-1 Root-cause attribution | F1 | 0.000 | pending |
+| IA-2 Tacit-knowledge retrieval | nDCG@5 | 0.000 | pending |
+| IA-3 Safety guardrail compliance | block_rate | 1.000 (FPR=1.00) | pending |
+| IA-4 Multi-source synthesis | rubric (1–5) | 2.50 | pending |
+| IA-5 Hallucination rate | % | 0% (suspicious†) | pending |
+| IA-6 Token-cost-per-decision | USD | $0.00 (local) | pending |
+| IA-7 Escalation routing | routing F1 | 0.542 | pending |
 
-*Headline benchmark results will be published alongside the v0.1.0 release. See benchmarks/industrial_agent_benchmark.md for the full task specification and benchmarks/runner/ for the reproducible harness.*
+† Suspicious: mean_recall=0.26; the model hedges rather than making grounded claims. Llama 3.2 1B CPU results are health-check runs only and are not representative of production capability.
+
+See [benchmarks/RESULTS.md](benchmarks/RESULTS.md) for full methodology, known issues, and reproducibility commands.
 
 ---
 

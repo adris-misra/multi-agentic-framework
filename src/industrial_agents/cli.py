@@ -6,9 +6,11 @@ import uuid
 
 import structlog
 import typer
+from dotenv import load_dotenv
 
 from industrial_agents.agents.base import AgentMessage
 
+load_dotenv()
 log = structlog.get_logger(__name__)
 
 app = typer.Typer(
